@@ -139,6 +139,11 @@ export default function Footer() {
             <span className="text-[11px] text-black/35 font-semibold italic">
               "I trained an AI on myself. It's almost as good as the real thing."
             </span>
+            <div className="text-[11px] text-black/35 font-semibold">
+              <a href="https://bluren.webflow.io/" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors duration-200">
+                Design Inspiration: Bluren
+              </a>
+            </div>
             <button 
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="text-[11px] text-black/35 font-semibold hover:text-black transition-colors duration-200"
