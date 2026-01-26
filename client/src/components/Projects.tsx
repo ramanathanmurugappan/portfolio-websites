@@ -15,6 +15,7 @@ interface Project {
   description: string;
   highlights: string[];
   techStack: string[];
+  image: string;
 }
 
 const projects: Project[] = [
@@ -31,6 +32,7 @@ const projects: Project[] = [
       'Built an eval and observability stack with DeepEval, LangSmith, and Langfuse',
     ],
     techStack: ['Docling', 'OpenSearch', 'Open WebUI', 'DeepEval', 'LangSmith', 'Langfuse'],
+    image: '/images/project-hr-rag.png',
   },
   {
     id: 2,
@@ -43,6 +45,7 @@ const projects: Project[] = [
       'Implemented a Master Orchestrator Agent that leverages MCP for dynamic agent routing and execution',
     ],
     techStack: ['MCP', 'Multi-Agent Systems', 'LangGraph', 'ServiceNow'],
+    image: '/images/project-servicenow.png',
   },
   {
     id: 3,
@@ -55,6 +58,7 @@ const projects: Project[] = [
       'Integrated a Qdrant vector database, significantly improving user experience in visual product searches',
     ],
     techStack: ['SAM', 'Clip-ViT-B', 'Qdrant', 'Python'],
+    image: '/images/project-retail-lens.png',
   },
   {
     id: 4,
@@ -67,6 +71,7 @@ const projects: Project[] = [
       'Led front-end (Streamlit) and back-end development, contributing to two project phases and client demos',
     ],
     techStack: ['RAG', 'LLM', 'Streamlit', 'Excel/CSV Integration'],
+    image: '/images/project-asthma.png',
   },
   {
     id: 5,
@@ -79,6 +84,7 @@ const projects: Project[] = [
       'Utilized automated web scraping for data collection, enhancing the effectiveness of the pricing strategy',
     ],
     techStack: ['Python', 'Web Scraping', 'Segmentation', 'Profiling'],
+    image: '/images/project-fee-optimize.png',
   },
   {
     id: 6,
@@ -91,6 +97,7 @@ const projects: Project[] = [
       'Conducted monthly risk analyses for continuous improvements in code base performance',
     ],
     techStack: ['Bagging', 'Boosting', 'Python', 'Risk Analysis'],
+    image: '/images/project-credit-risk.png',
   },
   {
     id: 7,
@@ -103,6 +110,7 @@ const projects: Project[] = [
       'Improved efficiency and optimization of in-house call center operations by accurately predicting customer payments',
     ],
     techStack: ['RandomForest', 'LightGBM', 'GridSearchCV', 'Python'],
+    image: '/images/project-payment-predict.png',
   },
   {
     id: 8,
@@ -115,6 +123,7 @@ const projects: Project[] = [
       'Built data pipelines to integrate various data sources, enriching dashboards with granular data',
     ],
     techStack: ['Apache Airflow', 'Data Pipelines', 'Dashboard', 'SQL'],
+    image: '/images/project-flight-delay.png',
   },
 ];
 
