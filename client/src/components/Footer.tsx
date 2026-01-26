@@ -83,14 +83,7 @@ export default function Footer() {
                 >
                   Google Scholar
                 </a>
-                <a 
-                  href="https://resume-chatbot-9860.onrender.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-[13px] font-semibold footer-link hover:text-[#1e6ef4] transition-colors duration-200 w-fit"
-                >
-                  ⚡ Digital Clone
-                </a>
+
               </nav>
             </div>
 

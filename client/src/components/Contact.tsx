@@ -11,18 +11,6 @@ export default function Contact() {
         <span className="text-[11px] tracking-[0.08em] text-black/35 uppercase font-semibold">
           📬 Get In Touch
         </span>
-        <h2 className="text-[40px] leading-[116%] tracking-[-0.02em] font-semibold">
-          Let's Connect
-        </h2>
-        <p className="text-[16px] text-black/35 font-semibold max-w-[400px]">
-          Open for AI/ML collaborations, research opportunities, and interesting projects
-        </p>
-        <a 
-          href="mailto:ramanathanmurugappan29@gmail.com"
-          className="inline-flex items-center justify-center px-[28px] py-[14px] rounded-[14px] bg-[#1e6ef4] text-white text-[14px] font-semibold hover:bg-[#1a5ecf] transition-all duration-200 hover:-translate-y-0.5"
-        >
-          Start a Conversation 💬
-        </a>
       </div>
 
       {/* Contact Cards */}
@@ -101,14 +89,7 @@ export default function Contact() {
         >
           Scholar
         </a>
-        <a 
-          href="https://resume-chatbot-9860.onrender.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center px-[20px] py-[12px] rounded-[12px] bg-[#1e6ef4] text-white text-[13px] font-semibold hover:bg-[#1a5ecf] transition-all duration-200"
-        >
-          ⚡ Try My Digital Clone
-        </a>
+
       </div>
     </div>
   );
