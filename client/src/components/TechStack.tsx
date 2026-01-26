@@ -6,6 +6,7 @@
 interface TechItem {
   name: string;
   icon: string;
+  isImage?: boolean;
   description: string;
 }
 
@@ -50,30 +51,30 @@ const techCategories: TechCategory[] = [
     title: 'ML & Data',
     emoji: '📈',
     items: [
-      { name: 'Python', icon: '🐍', description: 'Primary programming language' },
+      { name: 'Python', icon: '/images/tech-logos/python.svg', isImage: true, description: 'Primary programming language' },
       { name: 'PyTorch & TensorFlow', icon: '🧠', description: 'Deep learning frameworks' },
       { name: 'Pandas & Spark', icon: '📊', description: 'Data processing at scale' },
-      { name: 'PostgreSQL', icon: '🐘', description: 'Relational database' },
+      { name: 'PostgreSQL', icon: '/images/tech-logos/postgresql.svg', isImage: true, description: 'Relational database' },
     ],
   },
   {
     title: 'Cloud & MLOps',
     emoji: '☁️',
     items: [
-      { name: 'AWS', icon: '☁️', description: 'Lambda, EC2, S3, Bedrock' },
-      { name: 'Docker & OpenShift', icon: '🐳', description: 'Containerization' },
+      { name: 'AWS', icon: '/images/tech-logos/aws.svg', isImage: true, description: 'Lambda, EC2, S3, Bedrock' },
+      { name: 'Docker & OpenShift', icon: '/images/tech-logos/docker.svg', isImage: true, description: 'Containerization' },
       { name: 'MLflow', icon: '📦', description: 'ML lifecycle management' },
-      { name: 'Apache Airflow', icon: '🌬️', description: 'Workflow orchestration' },
+      { name: 'Apache Airflow', icon: '/images/tech-logos/airflow.svg', isImage: true, description: 'Workflow orchestration' },
     ],
   },
   {
     title: 'Frameworks & Tools',
     emoji: '🛠️',
     items: [
-      { name: 'FastAPI', icon: '⚡', description: 'High-performance APIs' },
-      { name: 'React.js', icon: '⚛️', description: 'Frontend development' },
+      { name: 'FastAPI', icon: '/images/tech-logos/fastapi.svg', isImage: true, description: 'High-performance APIs' },
+      { name: 'React.js', icon: '/images/tech-logos/react.svg', isImage: true, description: 'Frontend development' },
       { name: 'Streamlit & Gradio', icon: '🎛️', description: 'ML app interfaces' },
-      { name: 'Git & GitHub', icon: '📂', description: 'Version control' },
+      { name: 'Git & GitHub', icon: '/images/tech-logos/git.svg', isImage: true, description: 'Version control' },
     ],
   },
 ];
@@ -116,7 +117,15 @@ export default function TechStack() {
                     className="w-[40px] h-[40px] rounded-[10px] bg-[#f7f7f7] flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:bg-[#ebebeb] group-hover:-translate-y-1"
                     style={{ border: '1px solid rgba(0,0,0,0.04)' }}
                   >
-                    <span className="text-[20px]">{tech.icon}</span>
+                    {tech.isImage ? (
+                      <img 
+                        src={tech.icon} 
+                        alt={tech.name}
+                        className="w-[24px] h-[24px] object-contain"
+                      />
+                    ) : (
+                      <span className="text-[20px]">{tech.icon}</span>
+                    )}
                   </div>
                   <div className="flex flex-col gap-[1px]">
                     <span className="text-[13px] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200">
