@@ -1,9 +1,11 @@
 /**
  * Navigation Component - Fixed Bottom iOS-style Navigation Bar
  * Design: Rounded pill container with icon buttons
+ * Mobile-friendly: Larger touch targets, active state styling instead of hover
  */
 
 import { Home, Folder, FileText, Mail } from 'lucide-react';
+import { useState } from 'react';
 
 interface NavigationProps {
   activeSection: string;
@@ -17,6 +19,8 @@ const navItems = [
 ];
 
 export default function Navigation({ activeSection }: NavigationProps) {
+  const [pressed, setPressed] = useState<string | null>(null);
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -24,10 +28,18 @@ export default function Navigation({ activeSection }: NavigationProps) {
     }
   };
 
+  const handleTouchStart = (id: string) => {
+    setPressed(id);
+  };
+
+  const handleTouchEnd = () => {
+    setPressed(null);
+  };
+
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 nav-bar">
+    <nav className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-50 nav-bar w-full px-4 md:w-auto md:px-0">
       <div 
-        className="flex items-center gap-[5px] p-[10px] rounded-[20px] bg-white"
+        className="flex items-center gap-[5px] p-[10px] rounded-[20px] bg-white mx-auto w-fit"
         style={{ 
           boxShadow: '0 0 0 1px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.08)'
         }}
@@ -35,19 +47,28 @@ export default function Navigation({ activeSection }: NavigationProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
+          const isPressed = pressed === item.id;
           
           return (
             <button
               key={item.id}
               onClick={() => scrollToSection(item.id)}
+              onTouchStart={() => handleTouchStart(item.id)}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={() => handleTouchStart(item.id)}
+              onMouseUp={handleTouchEnd}
+              onMouseLeave={handleTouchEnd}
               className={`
                 flex items-center justify-center
-                w-[56px] h-[56px]
+                min-w-[56px] min-h-[56px] w-[56px] h-[56px]
                 rounded-[16px]
-                transition-all duration-300 ease-out
+                transition-all duration-200 ease-out
+                active:scale-95
                 ${isActive 
                   ? 'bg-[#1e6ef4] text-white scale-105' 
-                  : 'bg-transparent text-black/40 hover:bg-black/5 hover:text-black/60'
+                  : isPressed
+                  ? 'bg-black/10 text-black/80 scale-95'
+                  : 'bg-transparent text-black/40 hover:bg-black/5 hover:text-black/60 active:bg-black/10'
                 }
               `}
               aria-label={item.label}

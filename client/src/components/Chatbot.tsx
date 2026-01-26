@@ -176,33 +176,33 @@ export default function Chatbot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[320px] max-w-[calc(100vw-48px)]">
+    <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-40 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-3 rounded-[20px] bg-white shadow-2xl border border-black/10 overflow-hidden flex flex-col h-[500px]">
+        <div className="mb-3 rounded-[20px] bg-white shadow-2xl border border-black/10 overflow-hidden flex flex-col h-[400px] md:h-[500px]">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#1e6ef4] to-[#1a5ecf] px-6 py-4 text-white flex items-center justify-between">
+          <div className="bg-gradient-to-r from-[#1e6ef4] to-[#1a5ecf] px-4 md:px-6 py-3 md:py-4 text-white flex items-center justify-between">
             <div>
-              <h3 className="text-[16px] font-semibold">Ramanathan's AI</h3>
-              <p className="text-[11px] text-white/70">Ask about my experience</p>
+              <h3 className="text-[14px] md:text-[16px] font-semibold">Ramanathan's AI</h3>
+              <p className="text-[10px] md:text-[11px] text-white/70">Ask about my experience</p>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/20 rounded-full w-[28px] h-[28px] flex items-center justify-center transition-all"
+              className="text-white hover:bg-white/20 rounded-full w-[28px] h-[28px] flex items-center justify-center transition-all flex-shrink-0"
             >
               ×
             </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f9f9f9]">
+          <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 bg-[#f9f9f9]">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-[16px] px-4 py-2 text-[13px] leading-[150%] ${
+                  className={`max-w-[85%] rounded-[16px] px-3 md:px-4 py-2 text-[12px] md:text-[13px] leading-[150%] ${
                     msg.role === 'user'
                       ? 'bg-[#1e6ef4] text-white rounded-br-[4px]'
                       : 'bg-white text-black/80 border border-black/10 rounded-bl-[4px]'
@@ -214,7 +214,7 @@ export default function Chatbot() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-black/10 rounded-[16px] rounded-bl-[4px] px-4 py-2">
+                <div className="bg-white border border-black/10 rounded-[16px] rounded-bl-[4px] px-3 md:px-4 py-2">
                   <div className="flex gap-1">
                     <div className="w-2 h-2 rounded-full bg-black/40 animate-bounce"></div>
                     <div className="w-2 h-2 rounded-full bg-black/40 animate-bounce [animation-delay:0.2s]"></div>
@@ -227,20 +227,20 @@ export default function Chatbot() {
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSendMessage} className="border-t border-black/10 p-3 bg-white">
+          <form onSubmit={handleSendMessage} className="border-t border-black/10 p-2 md:p-3 bg-white">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask me anything..."
-                className="flex-1 px-3 py-2 rounded-[12px] border border-black/10 text-[12px] placeholder-black/40 focus:outline-none focus:border-[#1e6ef4] transition-all"
+                className="flex-1 px-2 md:px-3 py-2 rounded-[12px] border border-black/10 text-[11px] md:text-[12px] placeholder-black/40 focus:outline-none focus:border-[#1e6ef4] transition-all"
                 disabled={loading}
               />
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="px-3 py-2 rounded-[12px] bg-[#1e6ef4] text-white text-[12px] font-semibold hover:bg-[#1a5ecf] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-2 md:px-3 py-2 rounded-[12px] bg-[#1e6ef4] text-white text-[11px] md:text-[12px] font-semibold hover:bg-[#1a5ecf] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >
                 Send
               </button>
@@ -252,7 +252,7 @@ export default function Chatbot() {
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-[56px] h-[56px] rounded-full flex items-center justify-center font-bold text-[24px] shadow-lg hover:scale-110 transition-all duration-200 ${
+        className={`w-[56px] h-[56px] rounded-full flex items-center justify-center font-bold text-[24px] shadow-lg hover:scale-110 transition-all duration-200 active:scale-95 ${
           isOpen
             ? 'bg-[#1e6ef4] text-white'
             : 'bg-[#1e6ef4] text-white hover:bg-[#1a5ecf]'
