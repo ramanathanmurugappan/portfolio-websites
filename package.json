@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://ramanathanmurugappan.github.io/",
+  "homepage": "https://ram96.com/",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
