@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://ramanathanmurugappan.github.io/protfolio/",
+  "homepage": "https://ramanathanmurugappan.github.io/",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
