@@ -59,7 +59,7 @@ export default function Hero() {
             <h1 className="text-[48px] leading-[116%] tracking-[-0.03em] font-semibold">
               Hi, I'm Ramanathan 👋
             </h1>
-            <p className="text-[48px] leading-[116%] tracking-[-0.03em] font-semibold text-black/35">
+            <p className="text-[48px] leading-[116%] tracking-[-0.03em] font-semibold text-black/35 dark:text-white/35">
               I build enterprise-grade AI products
             </p>
           </div>

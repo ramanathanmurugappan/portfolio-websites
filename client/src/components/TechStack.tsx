@@ -84,7 +84,7 @@ export default function TechStack() {
     <div className="container flex flex-col gap-[40px]">
       {/* Section Header */}
       <div className="flex flex-col gap-[8px]">
-        <span className="text-[11px] tracking-[0.08em] text-black/35 uppercase font-semibold">
+        <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
           🛠️ Tech Stack
         </span>
         <h2 className="text-[40px] leading-[116%] tracking-[-0.02em] font-semibold">
@@ -101,7 +101,7 @@ export default function TechStack() {
               className="pb-[12px]"
               style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
             >
-              <span className="text-[13px] text-black/35 font-semibold">
+              <span className="text-[13px] text-black/35 dark:text-white/35 font-semibold">
                 {category.emoji} {category.title}
               </span>
             </div>
@@ -114,7 +114,7 @@ export default function TechStack() {
                   className="flex items-center gap-[12px] group cursor-default"
                 >
                   <div 
-                    className="w-[40px] h-[40px] rounded-[10px] bg-[#f7f7f7] flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:bg-[#ebebeb] group-hover:-translate-y-1"
+                    className="w-[40px] h-[40px] rounded-[10px] bg-[#f7f7f7] dark:bg-[#1a1a1a] flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:bg-[#ebebeb] dark:group-hover:bg-[#252525] group-hover:-translate-y-1"
                     style={{ border: '1px solid rgba(0,0,0,0.04)' }}
                   >
                     {tech.isImage ? (
@@ -128,10 +128,10 @@ export default function TechStack() {
                     )}
                   </div>
                   <div className="flex flex-col gap-[1px]">
-                    <span className="text-[13px] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200">
+                    <span className="text-[13px] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200 text-black dark:text-white">
                       {tech.name}
                     </span>
-                    <span className="text-[11px] text-black/35 font-semibold">
+                    <span className="text-[11px] text-black/35 dark:text-white/35 font-semibold">
                       {tech.description}
                     </span>
                   </div>

@@ -195,7 +195,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-50 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-3 rounded-[20px] bg-white shadow-2xl border border-black/10 overflow-hidden flex flex-col h-[400px] md:h-[500px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)]">
+        <div className="mb-3 rounded-[20px] bg-white dark:bg-[#1a1a1a] shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden flex flex-col h-[400px] md:h-[500px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)]">
           {/* Header */}
           <div className="bg-gradient-to-r from-[#1e6ef4] to-[#1a5ecf] px-4 md:px-6 py-3 md:py-4 text-white flex items-center justify-between">
             <div>
@@ -211,7 +211,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 bg-[#f9f9f9]">
+          <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 bg-[#f9f9f9] dark:bg-[#0f0f0f]">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -221,7 +221,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                   className={`max-w-[85%] rounded-[16px] px-3 md:px-4 py-2 text-[12px] md:text-[13px] leading-[150%] ${
                     msg.role === 'user'
                       ? 'bg-[#1e6ef4] text-white rounded-br-[4px]'
-                      : 'bg-white text-black/80 border border-black/10 rounded-bl-[4px]'
+                      : 'bg-white dark:bg-[#1a1a1a] text-black/80 dark:text-white/80 border border-black/10 dark:border-white/10 rounded-bl-[4px]'
                   }`}
                 >
                   {msg.content}
@@ -230,7 +230,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-black/10 rounded-[16px] rounded-bl-[4px] px-3 md:px-4 py-2">
+                <div className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 rounded-[16px] rounded-bl-[4px] px-3 md:px-4 py-2">
                   <div className="flex gap-1">
                     <div className="w-2 h-2 rounded-full bg-black/40 animate-bounce"></div>
                     <div className="w-2 h-2 rounded-full bg-black/40 animate-bounce [animation-delay:0.2s]"></div>
@@ -243,14 +243,14 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSendMessage} className="border-t border-black/10 p-2 md:p-3 bg-white">
+          <form onSubmit={handleSendMessage} className="border-t border-black/10 dark:border-white/10 p-2 md:p-3 bg-white dark:bg-[#1a1a1a]">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask me anything..."
-                className="flex-1 px-2 md:px-3 py-2 rounded-[12px] border border-black/10 text-[11px] md:text-[12px] placeholder-black/40 focus:outline-none focus:border-[#1e6ef4] transition-all"
+                className="flex-1 px-2 md:px-3 py-2 rounded-[12px] border border-black/10 dark:border-white/10 text-[11px] md:text-[12px] placeholder-black/40 dark:placeholder-white/40 focus:outline-none focus:border-[#1e6ef4] transition-all bg-white dark:bg-[#0f0f0f] text-black dark:text-white"
                 disabled={loading}
               />
               <button

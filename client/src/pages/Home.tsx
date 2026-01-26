@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
+import ThemeToggle from '@/components/ThemeToggle';
 import Hero from '@/components/Hero';
 import AboutSection from '@/components/AboutSection';
 import Projects from '@/components/Projects';
@@ -42,7 +43,10 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-black">
+      {/* Theme Toggle Button */}
+      <ThemeToggle />
+
       {/* Hero Section */}
       <section id="home">
         <Hero />

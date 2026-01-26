@@ -11,12 +11,12 @@ export default function AboutSection() {
         
         {/* Intro Card - Large Left */}
         <div 
-          className="md:col-span-6 rounded-[32px] bg-[#f7f7f7] p-[40px] flex flex-col justify-between min-h-[420px] card-hover"
+          className="md:col-span-6 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] flex flex-col justify-between min-h-[420px] card-hover"
           style={{ border: '1px solid rgba(0,0,0,0.04)' }}
         >
           <h2 className="text-[32px] leading-[120%] tracking-[-0.02em] font-semibold max-w-[380px]">
-            <span className="text-black">Gen AI Architect 🏗️</span>{' '}
-            <span className="text-black/35">building robust, end-to-end, enterprise-grade AI products</span>
+            <span className="text-black dark:text-white">Gen AI Architect 🏗️</span>{' '}
+            <span className="text-black/35 dark:text-white/35">building robust, end-to-end, enterprise-grade AI products</span>
           </h2>
           <div className="flex justify-center mt-auto">
             <img 
@@ -31,31 +31,31 @@ export default function AboutSection() {
         <div className="md:col-span-4 flex flex-col gap-[16px]">
           {/* Location Card */}
           <div 
-            className="rounded-[32px] bg-[#f7f7f7] p-[28px] flex-1 card-hover"
+            className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex-1 card-hover"
             style={{ border: '1px solid rgba(0,0,0,0.04)' }}
           >
-            <span className="text-[11px] tracking-[0.08em] text-black/35 uppercase font-semibold">
+            <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
               📍 Based In
             </span>
-            <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold mt-[8px]">
+            <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold mt-[8px] text-black dark:text-white">
               Bengaluru, India
             </h3>
           </div>
 
           {/* Experience Card */}
           <div 
-            className="rounded-[32px] bg-[#f7f7f7] p-[28px] flex-[2] card-hover"
+            className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex-[2] card-hover"
             style={{ border: '1px solid rgba(0,0,0,0.04)' }}
           >
-            <span className="text-[11px] tracking-[0.08em] text-black/35 uppercase font-semibold">
+            <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
               💼 Experience Since
             </span>
-            <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold mt-[8px]">
+            <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold mt-[8px] text-black dark:text-white">
               December 2019
             </h3>
             {/* Code Snippet */}
             <div 
-              className="mt-[16px] bg-white rounded-[16px] p-[16px] overflow-hidden"
+              className="mt-[16px] bg-white dark:bg-[#0f0f0f] rounded-[16px] p-[16px] overflow-hidden"
               style={{ border: '1px solid rgba(0,0,0,0.04)' }}
             >
               <div className="flex items-center gap-[5px] mb-[12px]">
@@ -64,7 +64,7 @@ export default function AboutSection() {
                 <div className="w-[8px] h-[8px] rounded-full bg-[#28c840]" />
               </div>
               <pre 
-                className="text-[10px] leading-[160%] text-black/60 overflow-hidden"
+                className="text-[10px] leading-[160%] text-black/60 dark:text-white/60 overflow-hidden"
                 style={{ fontFamily: "'DM Mono', monospace" }}
               >
 {`from langchain import Agent
@@ -81,34 +81,34 @@ class GenAIArchitect:
 
         {/* Bottom Row - Two Cards */}
         <div 
-          className="md:col-span-5 rounded-[32px] bg-[#f7f7f7] p-[28px] flex flex-col justify-between min-h-[180px] card-hover"
+          className="md:col-span-5 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col justify-between min-h-[180px] card-hover"
           style={{ border: '1px solid rgba(0,0,0,0.04)' }}
         >
           <span 
-            className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white text-[11px] tracking-[0.02em] font-semibold w-fit"
+            className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[11px] tracking-[0.02em] font-semibold w-fit"
             style={{ border: '1px solid rgba(0,0,0,0.04)' }}
           >
             🛠️ What I Do
           </span>
-          <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold max-w-[280px]">
-            <span className="text-black">Multi-Agent Systems, RAG Pipelines,</span>{' '}
-            <span className="text-black/35">and ML Modeling</span>
+          <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold max-w-[280px] text-black dark:text-white">
+            <span className="text-black dark:text-white">Multi-Agent Systems, RAG Pipelines,</span>{' '}
+            <span className="text-black/35 dark:text-white/35">and ML Modeling</span>
           </h3>
         </div>
 
         <div 
-          className="md:col-span-5 rounded-[32px] bg-[#f7f7f7] p-[28px] flex flex-col justify-between min-h-[180px] card-hover relative overflow-hidden"
+          className="md:col-span-5 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col justify-between min-h-[180px] card-hover relative overflow-hidden"
           style={{ border: '1px solid rgba(0,0,0,0.04)' }}
         >
           <span 
-            className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white text-[11px] tracking-[0.02em] font-semibold w-fit"
+            className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[11px] tracking-[0.02em] font-semibold w-fit"
             style={{ border: '1px solid rgba(0,0,0,0.04)' }}
           >
             🏢 Currently At
           </span>
           <div className="flex flex-col gap-[4px]">
-            <span className="text-[13px] text-black/35 font-semibold">AI/ML Lead Research Engineer</span>
-            <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold">
+            <span className="text-[13px] text-black/35 dark:text-white/35 font-semibold">AI/ML Lead Research Engineer</span>
+            <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold text-black dark:text-white">
               ITC Infotech
             </h3>
           </div>

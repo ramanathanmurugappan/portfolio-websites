@@ -55,7 +55,7 @@ export default function Achievements() {
     <div className="container flex flex-col gap-[40px]">
       {/* Section Header */}
       <div className="flex flex-col items-center text-center gap-[8px]">
-        <span className="text-[11px] tracking-[0.08em] text-black/35 uppercase font-semibold">
+        <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
           🏅 Achievements
         </span>
         <h2 className="text-[40px] leading-[116%] tracking-[-0.02em] font-semibold">
@@ -68,7 +68,7 @@ export default function Achievements() {
         {achievements.map((achievement) => (
           <div 
             key={achievement.title}
-            className="rounded-[32px] bg-[#f7f7f7] p-[40px] flex items-center justify-between min-h-[160px] relative overflow-hidden achievement-card"
+            className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] flex items-center justify-between min-h-[160px] relative overflow-hidden achievement-card"
             style={{ border: '1px solid rgba(0,0,0,0.04)' }}
           >
             {/* Avatar on Left */}
@@ -88,7 +88,7 @@ export default function Achievements() {
             }`}>
               {achievement.highlight && (
                 <span 
-                  className="inline-flex px-[10px] py-[4px] rounded-[8px] bg-white text-[10px] tracking-[0.02em] font-semibold w-fit mb-[4px]"
+                  className="inline-flex px-[10px] py-[4px] rounded-[8px] bg-white dark:bg-[#0f0f0f] text-[10px] tracking-[0.02em] font-semibold w-fit mb-[4px]"
                   style={{ 
                     border: '1px solid rgba(0,0,0,0.04)',
                     marginLeft: achievement.memojiPosition === 'left' ? 'auto' : '0'
@@ -97,10 +97,10 @@ export default function Achievements() {
                   {achievement.highlight}
                 </span>
               )}
-              <span className="text-[36px] leading-[100%] tracking-[-0.03em] font-semibold">
+              <span className="text-[36px] leading-[100%] tracking-[-0.03em] font-semibold text-black dark:text-white">
                 {achievement.title}
               </span>
-              <span className="text-[13px] text-black/50 font-semibold max-w-[400px]" style={{
+              <span className="text-[13px] text-black/50 dark:text-white/50 font-semibold max-w-[400px]" style={{
                 marginLeft: achievement.memojiPosition === 'left' ? 'auto' : '0'
               }}>
                 {achievement.description}
@@ -146,16 +146,16 @@ export default function Achievements() {
               href={pub.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-[24px] bg-[#f7f7f7] p-[28px] flex flex-col gap-[12px] card-hover group"
+              className="rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col gap-[12px] card-hover group"
               style={{ border: '1px solid rgba(0,0,0,0.04)' }}
             >
               <span className="text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
                 📄 Published Paper
               </span>
-              <h4 className="text-[14px] leading-[140%] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200">
+              <h4 className="text-[14px] leading-[140%] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200 text-black dark:text-white">
                 {pub.title}
               </h4>
-              <span className="text-[12px] text-black/35 font-semibold">
+              <span className="text-[12px] text-black/35 dark:text-white/35 font-semibold">
                 {pub.venue}
               </span>
               <span className="text-[11px] text-[#1e6ef4] font-semibold mt-auto">

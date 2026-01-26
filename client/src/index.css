@@ -152,6 +152,74 @@
   --sidebar-ring: #1e6ef4;
 }
 
+/* Dark Mode */
+.dark {
+  --white: #000000;
+  --black: #ffffff;
+  --grey: #1a1a1a;
+  --green: #35c759;
+  --accent-blue: #1e6ef4;
+  --accent-dark: #1a5ecf;
+  --black-opacity-50: rgba(255, 255, 255, 0.5);
+  --black-opacity-35: rgba(255, 255, 255, 0.35);
+  --black-opacity-15: rgba(255, 255, 255, 0.15);
+  --black-opacity-7: rgba(255, 255, 255, 0.07);
+  --black-opacity-4: rgba(255, 255, 255, 0.04);
+  
+  /* Badge Colors - Dark Mode */
+  --badge-yellow-bg: #4a3800;
+  --badge-yellow-text: #ffd966;
+  --badge-beige-bg: #4a2f1a;
+  --badge-beige-text: #f4cbb0;
+  --badge-blue-bg: #1f3a5f;
+  --badge-blue-text: #a8bfd9;
+  --badge-mint-bg: #1f3a27;
+  --badge-mint-text: #7dd6a3;
+  --badge-fog-bg: #2a2a2b;
+  --badge-fog-text: #b0b0b2;
+  --badge-orchid-bg: #3a1f4a;
+  --badge-orchid-text: #e9b5ff;
+  --badge-indigo-bg: #1a2054;
+  --badge-indigo-text: #9ab1ff;
+  --badge-sage-bg: #1f3520;
+  --badge-sage-text: #8fd18c;
+  --badge-pink-bg: #3a1f1f;
+  --badge-pink-text: #ff9d9d;
+  
+  --primary: #1e6ef4;
+  --primary-foreground: #ffffff;
+  --sidebar-primary: #1e6ef4;
+  --sidebar-primary-foreground: #ffffff;
+  --chart-1: #1e6ef4;
+  --chart-2: #35c759;
+  --chart-3: #ffa500;
+  --chart-4: #ff69b4;
+  --chart-5: #87ceeb;
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #1a1a1a;
+  --card-foreground: #ffffff;
+  --popover: #1a1a1a;
+  --popover-foreground: #ffffff;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: rgba(255, 255, 255, 0.5);
+  --accent: #1e6ef4;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.07);
+  --input: rgba(255, 255, 255, 0.07);
+  --ring: #1e6ef4;
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-accent: #1a1a1a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --sidebar-ring: #1e6ef4;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -500,4 +568,50 @@
 
 .footer-link:hover::after {
   width: 100%;
+}
+
+/* Dark Mode Text Color Utilities */
+.dark .text-black\/35 {
+  @apply text-white/60;
+}
+
+.dark .text-black\/40 {
+  @apply text-white/50;
+}
+
+.dark .text-black\/50 {
+  @apply text-white/70;
+}
+
+.dark .text-black\/60 {
+  @apply text-white/80;
+}
+
+.dark .text-black {
+  @apply text-white;
+}
+
+/* Dark Mode Background Utilities */
+.dark .bg-white {
+  @apply bg-[#1a1a1a];
+}
+
+.dark .bg-black\/5 {
+  @apply bg-white/5;
+}
+
+.dark .bg-black\/10 {
+  @apply bg-white/10;
+}
+
+.dark .hover\:bg-black\/5:hover {
+  @apply hover:bg-white/5;
+}
+
+.dark .active\:bg-black\/10:active {
+  @apply active:bg-white/10;
+}
+
+.dark .border-black\/10 {
+  @apply border-white/10;
 }

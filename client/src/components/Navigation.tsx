@@ -50,9 +50,9 @@ export default function Navigation({ activeSection, isChatOpen = false, onChatTo
   return (
     <nav className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-40 nav-bar w-full px-4 md:w-auto md:px-0">
       <div 
-        className="flex items-center gap-[5px] p-[10px] rounded-[20px] bg-white mx-auto w-fit"
+        className="flex items-center gap-[5px] p-[10px] rounded-[20px] bg-white dark:bg-[#1a1a1a] mx-auto w-fit"
         style={{ 
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.08)'
+          boxShadow: '0 0 0 1px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.08)',
         }}
       >
         {navItems.map((item) => {
@@ -78,8 +78,8 @@ export default function Navigation({ activeSection, isChatOpen = false, onChatTo
                 ${isActive 
                   ? 'bg-[#1e6ef4] text-white scale-105' 
                   : isPressed
-                  ? 'bg-black/10 text-black/80 scale-95'
-                  : 'bg-transparent text-black/40 hover:bg-black/5 hover:text-black/60 active:bg-black/10'
+                  ? 'bg-black/10 dark:bg-white/10 text-black/80 dark:text-white/80 scale-95'
+                  : 'bg-transparent text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black/60 dark:hover:text-white/60 active:bg-black/10 dark:active:bg-white/10'
                 }
               `}
               aria-label={item.label}

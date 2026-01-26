@@ -178,14 +178,14 @@ export default function Projects() {
         <div className="flex items-center gap-[12px]">
           <button 
             onClick={prevSlide}
-            className="w-[40px] h-[40px] rounded-full bg-[#f7f7f7] flex items-center justify-center hover:bg-[#ebebeb] transition-all duration-200"
+            className="w-[40px] h-[40px] rounded-full bg-[#f7f7f7] dark:bg-[#1a1a1a] flex items-center justify-center hover:bg-[#ebebeb] dark:hover:bg-[#252525] text-black dark:text-white transition-all duration-200"
             style={{ border: '1px solid rgba(0,0,0,0.04)' }}
           >
             ←
           </button>
           <button 
             onClick={nextSlide}
-            className="w-[40px] h-[40px] rounded-full bg-[#f7f7f7] flex items-center justify-center hover:bg-[#ebebeb] transition-all duration-200"
+            className="w-[40px] h-[40px] rounded-full bg-[#f7f7f7] dark:bg-[#1a1a1a] flex items-center justify-center hover:bg-[#ebebeb] dark:hover:bg-[#252525] text-black dark:text-white transition-all duration-200"
             style={{ border: '1px solid rgba(0,0,0,0.04)' }}
           >
             →
@@ -204,7 +204,7 @@ export default function Projects() {
       {/* Project Card */}
       <div className="container">
         <div 
-          className="rounded-[32px] bg-[#f7f7f7] overflow-hidden"
+          className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] overflow-hidden"
           style={{ border: '1px solid rgba(0,0,0,0.04)' }}
         >
           <AnimatePresence mode="wait" custom={direction}>
@@ -223,35 +223,35 @@ export default function Projects() {
                 {/* Company Badge */}
                 <div className="flex items-center gap-[8px]">
                   <div 
-                    className="inline-flex px-[14px] py-[8px] rounded-[12px] bg-white text-[12px] font-semibold"
+                    className="inline-flex px-[14px] py-[8px] rounded-[12px] bg-white dark:bg-[#0f0f0f] text-[12px] font-semibold"
                     style={{ border: '1px solid rgba(0,0,0,0.04)' }}
                   >
                     🏢 {projects[currentIndex].company}
                   </div>
                   <div 
-                    className="inline-flex px-[10px] py-[6px] rounded-[10px] bg-white text-[10px] font-semibold text-black/50"
+                    className="inline-flex px-[10px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[10px] font-semibold text-black/50 dark:text-white/50"
                     style={{ border: '1px solid rgba(0,0,0,0.04)' }}
                   >
                     {projects[currentIndex].period}
                   </div>
-                  <span className="text-[12px] text-black/35 font-semibold">
+                    <span className="text-[12px] text-black/35 dark:text-white/35 font-semibold">
                     {currentIndex + 1} / {projects.length}
                   </span>
                 </div>
 
                 {/* Project Info */}
                 <div className="flex flex-col gap-[16px]">
-                  <h3 className="text-[28px] leading-[116%] tracking-[-0.02em] font-semibold">
+                  <h3 className="text-[28px] leading-[116%] tracking-[-0.02em] font-semibold text-black dark:text-white">
                     {projects[currentIndex].name}
                   </h3>
-                  <p className="text-[13px] leading-[150%] text-black/50 font-semibold">
+                  <p className="text-[13px] leading-[150%] text-black/50 dark:text-white/50 font-semibold">
                     {projects[currentIndex].description}
                   </p>
                   
                   {/* Highlights */}
                   <ul className="flex flex-col gap-[8px] mt-[8px]">
                     {projects[currentIndex].highlights.map((highlight, idx) => (
-                      <li key={idx} className="flex items-start gap-[8px] text-[12px] text-black/60">
+                      <li key={idx} className="flex items-start gap-[8px] text-[12px] text-black/60 dark:text-white/60">
                         <span className="text-[#1e6ef4] mt-[2px]">•</span>
                         {highlight}
                       </li>
@@ -263,7 +263,7 @@ export default function Projects() {
                     {projects[currentIndex].techStack.map((tech) => (
                       <span 
                         key={tech}
-                        className="px-[10px] py-[5px] rounded-[8px] bg-white text-[11px] font-semibold text-black/60"
+                        className="px-[10px] py-[5px] rounded-[8px] bg-white dark:bg-[#0f0f0f] text-[11px] font-semibold text-black/60 dark:text-white/60"
                         style={{ border: '1px solid rgba(0,0,0,0.04)' }}
                       >
                         {tech}
@@ -294,7 +294,7 @@ export default function Projects() {
             key={index}
             onClick={() => goToSlide(index)}
             className={`w-[8px] h-[8px] rounded-full transition-all duration-300 ${
-              index === currentIndex ? 'bg-black scale-125' : 'bg-black/15 hover:bg-black/30'
+              index === currentIndex ? 'bg-black dark:bg-white scale-125' : 'bg-black/15 dark:bg-white/15 hover:bg-black/30 dark:hover:bg-white/30'
             }`}
           />
         ))}
