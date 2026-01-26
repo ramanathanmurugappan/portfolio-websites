@@ -4,21 +4,24 @@
  * Mobile-friendly: Larger touch targets, active state styling instead of hover
  */
 
-import { Home, Folder, FileText, Mail } from 'lucide-react';
+import { Home, Folder, FileText, Mail, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationProps {
   activeSection: string;
+  isChatOpen?: boolean;
+  onChatToggle?: (isOpen: boolean) => void;
 }
 
 const navItems = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'works', icon: Folder, label: 'Works' },
-  { id: 'about', icon: FileText, label: 'About' },
+  { id: 'tech-stack', icon: FileText, label: 'Tech Stack' },
   { id: 'contact', icon: Mail, label: 'Say Hi' },
+  { id: 'chat', icon: MessageCircle, label: 'Chat', isChat: true },
 ];
 
-export default function Navigation({ activeSection }: NavigationProps) {
+export default function Navigation({ activeSection, isChatOpen = false, onChatToggle }: NavigationProps) {
   const [pressed, setPressed] = useState<string | null>(null);
 
   const scrollToSection = (sectionId: string) => {
@@ -36,8 +39,16 @@ export default function Navigation({ activeSection }: NavigationProps) {
     setPressed(null);
   };
 
+  const handleNavItemClick = (item: typeof navItems[0]) => {
+    if (item.isChat) {
+      onChatToggle?.(!isChatOpen);
+    } else {
+      scrollToSection(item.id);
+    }
+  };
+
   return (
-    <nav className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-50 nav-bar w-full px-4 md:w-auto md:px-0">
+    <nav className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-40 nav-bar w-full px-4 md:w-auto md:px-0">
       <div 
         className="flex items-center gap-[5px] p-[10px] rounded-[20px] bg-white mx-auto w-fit"
         style={{ 
@@ -46,13 +57,13 @@ export default function Navigation({ activeSection }: NavigationProps) {
       >
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeSection === item.id;
+          const isActive = item.isChat ? isChatOpen : activeSection === item.id;
           const isPressed = pressed === item.id;
           
           return (
             <button
               key={item.id}
-              onClick={() => scrollToSection(item.id)}
+              onClick={() => handleNavItemClick(item)}
               onTouchStart={() => handleTouchStart(item.id)}
               onTouchEnd={handleTouchEnd}
               onMouseDown={() => handleTouchStart(item.id)}

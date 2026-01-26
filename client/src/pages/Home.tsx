@@ -14,13 +14,15 @@ import Achievements from '@/components/Achievements';
 import Education from '@/components/Education';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
+import Chatbot from '@/components/Chatbot';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('home');
+  const [isChatOpen, setIsChatOpen] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['home', 'about', 'works', 'contact'];
+      const sections = ['home', 'works', 'tech-stack', 'contact'];
       const scrollPosition = window.scrollY + window.innerHeight / 3;
 
       for (const section of sections) {
@@ -59,7 +61,7 @@ export default function Home() {
         </section>
 
         {/* Tech Stack Section */}
-        <section>
+        <section id="tech-stack">
           <TechStack />
         </section>
 
@@ -83,7 +85,10 @@ export default function Home() {
       <Footer />
 
       {/* Fixed Bottom Navigation */}
-      <Navigation activeSection={activeSection} />
+      <Navigation activeSection={activeSection} isChatOpen={isChatOpen} onChatToggle={setIsChatOpen} />
+
+      {/* Chatbot */}
+      <Chatbot isOpen={isChatOpen} onToggle={setIsChatOpen} />
     </div>
   );
 }

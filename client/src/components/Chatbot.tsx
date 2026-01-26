@@ -8,6 +8,11 @@ interface Message {
   timestamp: Date;
 }
 
+interface ChatbotProps {
+  isOpen?: boolean;
+  onToggle?: (isOpen: boolean) => void;
+}
+
 const PROFILE_CONTEXT = `
 
 You are Ramanathan Murugappan's, a GenAI Architect & AI/ML Research Engineer with 6+ years of experience designing and deploying enterprise-grade, end-to-end, cross-platform AI products.
@@ -92,7 +97,7 @@ Avoids generic explanations — assumes an advanced audience.
 
 When users ask questions about the profile, answer based on this information. Be professional, concise, and helpful. If asked something not in this profile, politely redirect to what you know about Ramanathan.`;
 
-export default function Chatbot() {
+export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotProps = {}) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -103,7 +108,18 @@ export default function Chatbot() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
+  const [internalIsOpen, setInternalIsOpen] = useState(true);
+  
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = (value: boolean) => {
+    if (onToggle) {
+      onToggle(value);
+    } else {
+      setInternalIsOpen(value);
+    }
+  };
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const genAI = useRef<GoogleGenerativeAI | null>(null);
   const modelRef = useRef<any>(null);
@@ -176,10 +192,10 @@ export default function Chatbot() {
   };
 
   return (
-    <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-40 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
+    <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-50 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-3 rounded-[20px] bg-white shadow-2xl border border-black/10 overflow-hidden flex flex-col h-[400px] md:h-[500px]">
+        <div className="mb-3 rounded-[20px] bg-white shadow-2xl border border-black/10 overflow-hidden flex flex-col h-[400px] md:h-[500px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)]">
           {/* Header */}
           <div className="bg-gradient-to-r from-[#1e6ef4] to-[#1a5ecf] px-4 md:px-6 py-3 md:py-4 text-white flex items-center justify-between">
             <div>
@@ -249,17 +265,19 @@ export default function Chatbot() {
         </div>
       )}
 
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-[56px] h-[56px] rounded-full flex items-center justify-center font-bold text-[24px] shadow-lg hover:scale-110 transition-all duration-200 active:scale-95 ${
-          isOpen
-            ? 'bg-[#1e6ef4] text-white'
-            : 'bg-[#1e6ef4] text-white hover:bg-[#1a5ecf]'
-        }`}
-      >
-        {isOpen ? '↓' : '💬'}
-      </button>
+      {/* Toggle Button - Only show if not controlled by Navigation */}
+      {!onToggle && (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-[56px] h-[56px] rounded-full flex items-center justify-center font-bold text-[24px] shadow-lg hover:scale-110 transition-all duration-200 active:scale-95 ${
+            isOpen
+              ? 'bg-[#1e6ef4] text-white'
+              : 'bg-[#1e6ef4] text-white hover:bg-[#1a5ecf]'
+          }`}
+        >
+          {isOpen ? '↓' : '💬'}
+        </button>
+      )}
     </div>
   );
 }
