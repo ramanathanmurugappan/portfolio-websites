@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 const plugins = [react(), tailwindcss()];
 
 export default defineConfig({
-  base: "/",
+  base: "/protfolio/",
   plugins,
   resolve: {
     alias: {
