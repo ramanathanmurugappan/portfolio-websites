@@ -114,15 +114,15 @@ const projects: Project[] = [
   },
   {
     id: 8,
-    name: 'Dashboards & Database Automation',
+    name: 'Two Stage Flight Prediction',
     company: 'Kaleidofin',
     period: "Dec'19 - Aug'21",
-    description: 'Customized dashboards with automated workflows using Apache Airflow.',
+    description: 'Built a two-stage ML engine to forecast on-time performance of US flights using weather data.',
     highlights: [
-      'Designed and deployed customized dashboards for partners and teams, automating workflows with Apache Airflow',
-      'Built data pipelines to integrate various data sources, enriching dashboards with granular data',
+      'Built a two-stage ML engine to forecast on-time performance of US flights using weather data.',
+      'First stage performs binary classification for delay prediction, second stage uses regression to predict delay duration in minutes',
     ],
-    techStack: ['Apache Airflow', 'Data Pipelines', 'Dashboard', 'SQL'],
+    techStack: ['Python', 'Machine Learning', 'Classification', 'Regression'],
     image: '/images/project-flight-delay.png',
   },
 ];
