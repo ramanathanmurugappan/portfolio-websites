@@ -8,9 +8,9 @@ export default function Contact() {
     <div className="container flex flex-col gap-[40px]">
       {/* Section Header - Centered */}
       <div className="flex flex-col items-center text-center gap-[20px]">
-        <span className="text-[11px] tracking-[0.08em] text-black/35 uppercase font-semibold">
+        <h2 className="text-[24px] leading-[116%] tracking-[-0.02em] font-semibold">
           📬 Get In Touch
-        </span>
+        </h2>
       </div>
 
       {/* Contact Cards */}
