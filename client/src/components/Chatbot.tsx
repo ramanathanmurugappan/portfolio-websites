@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 interface Message {
   id: string;
@@ -110,6 +110,9 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const [loading, setLoading] = useState(false);
   const [internalIsOpen, setInternalIsOpen] = useState(true);
   
+  // Debug log moved after state declarations
+  console.log('Chatbot input:', input, 'loading:', loading);
+  
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const setIsOpen = (value: boolean) => {
@@ -121,27 +124,52 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   };
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const genAI = useRef<GoogleGenerativeAI | null>(null);
-  const modelRef = useRef<any>(null);
+  const openaiRef = useRef<OpenAI | null>(null);
   const chatRef = useRef<any>(null);
 
-  // Initialize Gemini API
+  // Initialize OpenAI SDK with Groq base URL
   useEffect(() => {
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_KEY;
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
       if (!apiKey) {
-        throw new Error('Gemini API key not found. Please set VITE_GEMINI_KEY in .env.local');
+        throw new Error('Groq API key not found. Please set VITE_GROQ_API_KEY in .env.local');
       }
-      genAI.current = new GoogleGenerativeAI(apiKey);
-      modelRef.current = genAI.current.getGenerativeModel({
-        model: 'gemini-2.5-flash-lite',
-        systemInstruction: PROFILE_CONTEXT,
+      // Use OpenAI SDK with Groq's base URL
+      openaiRef.current = new OpenAI({
+        apiKey: apiKey,
+        baseURL: 'https://api.groq.com/openai/v1',
+        dangerouslyAllowBrowser: true,
       });
-      chatRef.current = modelRef.current.startChat({
-        history: [],
-      });
+      chatRef.current = {
+        history: [] as { role: string; content: string }[],
+        sendMessage: async (message: string) => {
+          const allMessages = [
+            { role: 'system' as const, content: PROFILE_CONTEXT },
+            ...chatRef.current.history,
+            { role: 'user' as const, content: message },
+          ];
+          const completion = await openaiRef.current!.chat.completions.create({
+            messages: allMessages,
+            model: 'llama-3.3-70b-versatile',  // High quality model with 1,000 RPD
+            temperature: 0.7,
+            max_tokens: 4096,
+            top_p: 1,
+            stream: false,
+          });
+          const assistantMessage = completion.choices[0]?.message?.content || '';
+          chatRef.current.history.push(
+            { role: 'user', content: message },
+            { role: 'assistant', content: assistantMessage }
+          );
+          return {
+            response: {
+              text: () => assistantMessage,
+            },
+          };
+        },
+      };
     } catch (error) {
-      console.error('Failed to initialize Gemini API:', error);
+      console.error('Failed to initialize Groq client:', error);
     }
   }, []);
 
@@ -157,10 +185,13 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     e.preventDefault();
     if (!input.trim() || !chatRef.current) return;
 
+    // Store the input value before clearing it
+    const currentInput = input.trim();
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: currentInput,
       timestamp: new Date(),
     };
 
@@ -169,7 +200,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     setLoading(true);
 
     try {
-      const result = await chatRef.current.sendMessage(input);
+      // Use the stored input value instead of the state variable
+      const result = await chatRef.current.sendMessage(currentInput);
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
