@@ -115,8 +115,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const [lastBotResponse, setLastBotResponse] = useState('');
   const recognitionRef = useRef<any>(null);
-  const micStreamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
   
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -297,102 +295,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     });
   }, [voices]);
 
-  // Start monitoring mic volume — returns a cleanup function
-  // Calls onVoiceDetected() when user's voice exceeds the threshold
-  const startVoiceActivityDetector = useCallback((onVoiceDetected: () => void) => {
-    let stopped = false;
-    let animFrameId: number;
-
-    (async () => {
-      try {
-        // Reuse existing mic stream or request a new one
-        if (!micStreamRef.current) {
-          micStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-        }
-        if (stopped) return;
-
-        const audioCtx = new AudioContext();
-        audioContextRef.current = audioCtx;
-        const sampleRate = audioCtx.sampleRate;
-        const source = audioCtx.createMediaStreamSource(micStreamRef.current);
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 1024;
-        analyser.smoothingTimeConstant = 0.3;
-        source.connect(analyser);
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        const binCount = analyser.frequencyBinCount;
-        const binFreqWidth = sampleRate / analyser.fftSize;
-
-        // Only look at speech frequency range: 300 Hz – 3400 Hz
-        const minBin = Math.floor(300 / binFreqWidth);
-        const maxBin = Math.min(Math.ceil(3400 / binFreqWidth), binCount - 1);
-
-        const VOLUME_THRESHOLD = 70; // Higher threshold to ignore ambient noise
-        let consecutiveFrames = 0;
-        const FRAMES_NEEDED = 6; // ~100ms of sustained speech at 60fps
-
-        const checkVolume = () => {
-          if (stopped) return;
-          analyser.getByteFrequencyData(dataArray);
-
-          // Average only speech-band frequencies (300–3400 Hz)
-          let sum = 0;
-          for (let i = minBin; i <= maxBin; i++) {
-            sum += dataArray[i];
-          }
-          const avg = sum / (maxBin - minBin + 1);
-
-          if (avg > VOLUME_THRESHOLD) {
-            consecutiveFrames++;
-            if (consecutiveFrames >= FRAMES_NEEDED) {
-              onVoiceDetected();
-              return;
-            }
-          } else {
-            // Decay instead of hard reset — allows brief pauses between words
-            consecutiveFrames = Math.max(0, consecutiveFrames - 1);
-          }
-          animFrameId = requestAnimationFrame(checkVolume);
-        };
-        checkVolume();
-      } catch {
-        // Mic not available — user can still tap to interrupt
-      }
-    })();
-
-    return () => {
-      stopped = true;
-      cancelAnimationFrame(animFrameId);
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-      }
-    };
-  }, []);
-
-  // Start SpeechRecognition and return a promise that resolves with the transcript
-  const listenForSpeech = useCallback((): Promise<string | null> => {
-    return new Promise((resolve) => {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (!SpeechRecognition) { resolve(null); return; }
-
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      recognitionRef.current = recognition;
-
-      recognition.onresult = (event: any) => {
-        resolve(event.results[0]?.[0]?.transcript || null);
-      };
-      recognition.onerror = () => resolve(null);
-      recognition.onend = () => resolve(null);
-
-      try { recognition.start(); } catch { resolve(null); }
-    });
-  }, []);
-
   // Send a message in voice mode and auto-speak the reply
   const handleVoiceSend = useCallback(async (transcript: string) => {
     if (!transcript.trim() || !chatRef.current) return;
@@ -419,38 +321,10 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setMessages((prev) => [...prev, botMessage]);
       setLastBotResponse(responseText);
 
-      // Auto-speak the response with voice activity interrupt detection
+      // Auto-speak the response — user can tap mic to interrupt
       setVoiceStatus('speaking');
-
-      // Race: TTS vs user voice detection
-      let stopDetector: (() => void) = () => {};
-      const speakPromise = speakText(responseText);
-      const interruptPromise = new Promise<'voice-detected'>((resolve) => {
-        const cleanup = startVoiceActivityDetector(() => resolve('voice-detected'));
-        if (cleanup) stopDetector = cleanup;
-      });
-
-      const raceResult = await Promise.race([speakPromise, interruptPromise]);
-
-      // Clean up detector
-      if (stopDetector) stopDetector();
-
-      if (raceResult === 'voice-detected') {
-        // User spoke — cancel TTS, start listening for their full utterance
-        interruptedRef.current = true;
-        window.speechSynthesis.cancel();
-        setVoiceStatus('listening');
-        setIsListening(true);
-        const newTranscript = await listenForSpeech();
-        setIsListening(false);
-        if (newTranscript && newTranscript.trim()) {
-          // Recursively handle the new question
-          await handleVoiceSend(newTranscript.trim());
-        } else {
-          setVoiceStatus('idle');
-        }
-      } else {
-        // TTS finished naturally
+      const speakResult = await speakText(responseText);
+      if (speakResult === 'completed') {
         setVoiceStatus('idle');
       }
     } catch {
@@ -464,7 +338,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setLastBotResponse('Sorry, I encountered an error. Please try again.');
       setVoiceStatus('idle');
     }
-  }, [speakText, startVoiceActivityDetector, listenForSpeech]);
+  }, [speakText]);
 
   // Toggle microphone listening
   const toggleListening = useCallback(() => {
@@ -537,15 +411,10 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     recognition.start();
   }, [isListening, voiceStatus, handleVoiceSend]);
 
-  // Cleanup recognition and mic on unmount
+  // Cleanup recognition on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
-      if (audioContextRef.current) audioContextRef.current.close().catch(() => {});
-      if (micStreamRef.current) {
-        micStreamRef.current.getTracks().forEach(t => t.stop());
-        micStreamRef.current = null;
-      }
     };
   }, []);
 
@@ -557,10 +426,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       interruptedRef.current = true;
       setIsListening(false);
       setVoiceStatus('idle');
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-      }
     }
   }, [chatMode]);
 
