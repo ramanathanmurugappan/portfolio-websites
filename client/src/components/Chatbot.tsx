@@ -115,6 +115,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const [lastBotResponse, setLastBotResponse] = useState('');
   const recognitionRef = useRef<any>(null);
+  const conversationActiveRef = useRef(false);
   
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -295,121 +296,150 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     });
   }, [voices]);
 
-  // Send a message in voice mode and auto-speak the reply
-  const handleVoiceSend = useCallback(async (transcript: string) => {
-    if (!transcript.trim() || !chatRef.current) return;
-
-    setVoiceStatus('thinking');
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: transcript.trim(),
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-
-    try {
-      const result = await chatRef.current.sendMessage(transcript.trim());
-      const responseText = result.response.text();
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        content: responseText,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      setLastBotResponse(responseText);
-
-      // Auto-speak the response — user can tap mic to interrupt
-      setVoiceStatus('speaking');
-      const speakResult = await speakText(responseText);
-      if (speakResult === 'completed') {
-        setVoiceStatus('idle');
+  // Listen for a single utterance — returns the transcript or null
+  const listenOnce = useCallback((): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        setLastBotResponse('Speech recognition is not supported in this browser. Please use Chrome.');
+        resolve(null);
+        return;
       }
-    } catch {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        content: 'Sorry, I encountered an error. Please try again.',
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      recognitionRef.current = recognition;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setVoiceStatus('listening');
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setIsListening(false);
+        resolve(transcript);
+      };
+
+      recognition.onerror = (event: any) => {
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          setLastBotResponse('Microphone access denied. Please allow microphone permission and try again.');
+        } else if (event.error === 'service-not-allowed') {
+          setLastBotResponse('Speech service blocked. Please access via localhost:3000 (not a network IP) or use HTTPS.');
+        } else if (event.error === 'network') {
+          setLastBotResponse('Network error — speech recognition requires an internet connection.');
+        } else if (event.error === 'no-speech') {
+          // Not an error in conversation mode — just no speech detected this round
+        } else {
+          setLastBotResponse(`Speech recognition error: ${event.error}`);
+        }
+        resolve(null);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      try { recognition.start(); } catch { resolve(null); }
+    });
+  }, []);
+
+  // Continuous voice conversation loop
+  const runConversationLoop = useCallback(async () => {
+    conversationActiveRef.current = true;
+
+    while (conversationActiveRef.current) {
+      // 1. Listen
+      const transcript = await listenOnce();
+
+      if (!conversationActiveRef.current) break;
+
+      if (!transcript || !transcript.trim()) {
+        // No speech detected — keep listening (retry)
+        continue;
+      }
+
+      if (!chatRef.current) break;
+
+      // 2. Think
+      setVoiceStatus('thinking');
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: transcript.trim(),
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorMessage]);
-      setLastBotResponse('Sorry, I encountered an error. Please try again.');
-      setVoiceStatus('idle');
-    }
-  }, [speakText]);
+      setMessages((prev) => [...prev, userMessage]);
 
-  // Toggle microphone listening
+      try {
+        const result = await chatRef.current.sendMessage(transcript.trim());
+        const responseText = result.response.text();
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'bot',
+          content: responseText,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, botMessage]);
+        setLastBotResponse(responseText);
+
+        if (!conversationActiveRef.current) break;
+
+        // 3. Speak
+        setVoiceStatus('speaking');
+        await speakText(responseText);
+
+        if (!conversationActiveRef.current) break;
+
+        // 4. Loop back to listening
+      } catch {
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'bot',
+          content: 'Sorry, I encountered an error. Please try again.',
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setLastBotResponse('Sorry, I encountered an error. Please try again.');
+        // Continue the loop — don't break on errors
+      }
+    }
+
+    setVoiceStatus('idle');
+    setIsListening(false);
+  }, [listenOnce, speakText]);
+
+  // Stop the conversation loop
+  const stopConversation = useCallback(() => {
+    conversationActiveRef.current = false;
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch { /* ignore */ }
+    }
+    window.speechSynthesis.cancel();
+    interruptedRef.current = true;
+    setIsListening(false);
+    setVoiceStatus('idle');
+  }, []);
+
+  // Toggle voice conversation on/off
   const toggleListening = useCallback(() => {
-    // If thinking, don't allow interruption (waiting for API response)
-    if (voiceStatus === 'thinking') return;
-
-    // If speaking, interrupt — cancel speech and start listening
-    if (voiceStatus === 'speaking') {
-      interruptedRef.current = true;
-      window.speechSynthesis.cancel();
-      // Fall through to start listening below
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setLastBotResponse('Speech recognition is not supported in this browser. Please use Chrome.');
-      return;
-    }
-
-    // Check secure context — Chrome requires localhost or HTTPS for SpeechRecognition
+    // Check secure context
     if (!window.isSecureContext) {
-      setLastBotResponse('Voice mode requires HTTPS or localhost. Please access the site via localhost:3000 or deploy with HTTPS.');
+      setLastBotResponse('Voice mode requires HTTPS or localhost.');
       return;
     }
 
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-      setVoiceStatus('idle');
-      return;
+    if (conversationActiveRef.current) {
+      // Stop the conversation
+      stopConversation();
+    } else {
+      // Start the conversation loop
+      runConversationLoop();
     }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      setVoiceStatus('listening');
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setIsListening(false);
-      handleVoiceSend(transcript);
-    };
-
-    recognition.onerror = (event: any) => {
-      setIsListening(false);
-      setVoiceStatus('idle');
-      if (event.error === 'not-allowed') {
-        setLastBotResponse('Microphone access denied. Please allow microphone permission and try again.');
-      } else if (event.error === 'service-not-allowed') {
-        setLastBotResponse('Speech service blocked. Please access via localhost:3000 (not a network IP) or use HTTPS.');
-      } else if (event.error === 'network') {
-        setLastBotResponse('Network error — speech recognition requires an internet connection (audio is processed by Google servers).');
-      } else if (event.error === 'no-speech') {
-        setLastBotResponse('No speech detected. Tap the mic and speak clearly.');
-      } else {
-        setLastBotResponse(`Speech recognition error: ${event.error}. Try using Chrome on localhost:3000.`);
-      }
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-  }, [isListening, voiceStatus, handleVoiceSend]);
+  }, [runConversationLoop, stopConversation]);
 
   // Cleanup recognition on unmount
   useEffect(() => {
@@ -418,22 +448,18 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     };
   }, []);
 
-  // Stop listening/speaking when switching away from voice mode
+  // Stop conversation when switching away from voice mode
   useEffect(() => {
     if (chatMode !== 'voice') {
-      if (recognitionRef.current) recognitionRef.current.abort();
-      window.speechSynthesis.cancel();
-      interruptedRef.current = true;
-      setIsListening(false);
-      setVoiceStatus('idle');
+      stopConversation();
     }
-  }, [chatMode]);
+  }, [chatMode, stopConversation]);
 
   const voiceStatusText = {
-    idle: 'Tap to speak',
+    idle: 'Tap to start conversation',
     listening: 'Listening...',
     thinking: 'Thinking...',
-    speaking: 'Speaking...',
+    speaking: 'Speaking... (tap to stop)',
   };
 
   return (
@@ -565,14 +591,13 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                 )}
                 <button
                   onClick={toggleListening}
-                  disabled={voiceStatus === 'thinking'}
                   className={`relative z-10 w-[80px] h-[80px] rounded-full flex items-center justify-center text-[32px] transition-all duration-300 shadow-lg ${
                     voiceStatus === 'listening'
                       ? 'bg-red-500 text-white scale-110'
                       : voiceStatus === 'thinking'
-                      ? 'bg-gray-400 dark:bg-gray-600 text-white cursor-wait'
+                      ? 'bg-amber-500 text-white'
                       : voiceStatus === 'speaking'
-                      ? 'bg-[#1e6ef4] text-white'
+                      ? 'bg-[#1e6ef4] text-white hover:bg-red-500'
                       : 'bg-[#1e6ef4] text-white hover:bg-[#1a5ecf] hover:scale-105 active:scale-95'
                   }`}
                 >
