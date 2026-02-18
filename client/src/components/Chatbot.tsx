@@ -43,24 +43,43 @@ TITLE: GenAI Architect & AI/ML Research Engineer | 6+ years experience building 
 Domains: Finance, Pharma, Retail, HR, Microfinance.
 
 EDUCATION:
-- M.E. Mechatronics — Anna University (M.I.T Campus), Chennai (2018–2020)
+1. GrowthX — Product & Growth fellowship (Mar 2024 – Mar 2025). Skills: Customer Engagement, Product Strategy.
+2. M.E. Mechatronics, Robotics, and Automation Engineering — Anna University (M.I.T Campus), Chennai (2018–2020). Skills: Drone Building, Embedded Systems.
+(LinkedIn says "Show all 4 educations" — only these 2 are visible. If asked about undergrad, say "I did my Masters at Anna University, Chennai. For undergrad details, feel free to email me.")
 
 RESEARCH:
-- Research Assistant + Teaching Assistant — Solarillion Foundation (Aug 2018 – May 2020)
+- Solarillion Foundation, Chennai (Aug 2018 – Jul 2020, 2 years):
+  - Research Assistant (Aug 2018 – Jul 2020)
+  - Teaching Assistant (Jan 2019 – Jul 2020)
+  - Research Intern (May 2019 – Jun 2019)
 - Published 2 papers at IEEE and FICC conferences on ML applications
 
 PUBLICATIONS:
-1. "A Two-Stage Machine Learning Approach to Forecast the Lifetime of Movies in a Multiplex" — FICC 2020, San Francisco, USA (Springer)
-2. "User-Independent Human Stress Detection" — IEEE Intelligent Systems IS'20, Varna, Bulgaria (95% bi-affective, 85% tri-affective, 83% multi-affective accuracy)
+1. "A Two-Stage Machine Learning Approach to Forecast the Lifetime of Movies in a Multiplex" — FICC 2020, San Francisco, USA (Springer, "Advances in Intelligent Systems and Computing"). Worked with a top Indian multiplex; approach surpassed their existing prediction system.
+2. "User-Independent Human Stress Detection" — IEEE 10th International Conference on Intelligent Systems (IS'20), Sep 2020, Varna, Bulgaria. Novel user-independent classification: 95% bi-affective, 85% tri-affective, 83% multi-affective accuracy. No prerequisite calibration needed for new users.
 
-CERTIFICATIONS (4):
+CERTIFICATIONS & LICENSES (13 total, key ones):
+- Advanced Analytics for Data Scientists — Workera (Jun 2024, ID: ABIJBKYL)
+- Responsible AI — Workera (Apr 2024, ID: 4IFXSIH8)
 - Red Hat OpenShift
 - Google GenAI
-- Workera Analytics
-- Responsible AI
+- (Plus 9 more certifications on LinkedIn)
+
+COURSES:
+- Programming, Data Structures And Algorithms Using Python — NPTEL
+- Essential Mathematics for Artificial Intelligence — edX
+- (Plus 1 more course)
 
 AWARDS:
 - GrowthX Winner — Scaled Blue Tokai Coffee revenue from ₹250 crore to ₹500 crore within 12 months. Won Capstone award presenting to 1,000+ industry professionals. GrowthX is a selective product & growth fellowship in India.
+
+LANGUAGES:
+- English: Full professional proficiency
+- Japanese: Limited working proficiency
+- (Plus 1 more language)
+
+VOLUNTEERING:
+- CARE AND WELFARE Organisation, Chennai — Worked to minimize road accidents and help the poor.
 
 WORK EXPERIENCE:
 
@@ -71,21 +90,38 @@ WORK EXPERIENCE:
 - Evaluation & observability stack: DeepEval, LangSmith, Langfuse
 - ServiceNow multi-agent system with Master Orchestrator Agent using MCP
 
-2. Data Science Analyst (Data & AI) — Accenture (Aug 2021 – Mar 2025)
-- Retail Lens: visual search using SAM + CLIP ViT-B + Qdrant vector DB
-- GenAI asthma prediction tool: RAG + LLM chat with Excel/CSV, Streamlit frontend+backend
-- Fee-optimizing pricing model for plasma donations using segmentation + web scraping
+2. Accenture — Full-time, 3 yrs 10 mos (Aug 2021 – May 2025):
+   a. Data Science Decision Analyst (Jul 2024 – May 2025, Bengaluru, On-site)
+   b. Functional and Ind Analytics Analyst (Jul 2022 – Jun 2024, Bengaluru, On-site)
+   c. Data Science Analyst (Aug 2021 – Jul 2022, Chennai, Remote)
+   Key projects:
+   - Retail Lens: visual search using SAM + CLIP ViT-B + Qdrant vector DB
+   - GenAI asthma prediction tool: RAG + LLM chat with Excel/CSV, Streamlit frontend+backend
+   - Fee-optimizing pricing model for plasma donations using segmentation + web scraping
 
-3. Data Science Analyst — Kaleidofin (Dec 2019 – Aug 2021)
-- Credit risk models using Bagging & Boosting for new-to-credit/MFI customers
-- Payment prediction: RandomForest, LightGBM, GridSearchCV for call-center optimization
-- Automated dashboards & pipelines with Apache Airflow
+3. Kaleidofin Private Limited — 1 yr 9 mos (Dec 2019 – Aug 2021), Chennai:
+   a. Data Science Analyst (Oct 2020 – Aug 2021, Full-time, On-site)
+   b. Data Science Consultant (May 2020 – Sep 2020, Full-time, On-site)
+   c. Data Science Intern (Dec 2019 – May 2020, Internship)
+   Key projects:
+   - Credit risk models using Bagging & Boosting for new-to-credit/MFI customers
+   - Payment prediction: RandomForest, LightGBM, GridSearchCV for call-center optimization
+   - Automated dashboards & pipelines with Apache Airflow
+
+4. Solarillion Foundation — Research & Teaching (Aug 2018 – Jul 2020, Chennai)
+   (Details in RESEARCH section above)
+
+5. R&D Intern — Teknuance Info Solutions Pvt Ltd (May 2018 – Aug 2018, Chennai)
+   - Applied Research internship
 
 PROJECTS:
-- Two Stage Flight Prediction: ML engine to forecast on-time performance of US flights using weather data
+- Predicting On-time Performance of Flights in the U.S (Aug–Dec 2018, with Solarillion Foundation): Two-stage ML model — Stage 1: binary classification for delay prediction, Stage 2: regression for delay in minutes. Used historical flight schedules + weather data.
 - Resume Chatbot: Flask + Google Generative AI chatbot (Python, Docker, deployed on Vercel)
 - WebSearch Bot: Streamlit app for searching/questioning web content using Gemini AI
-- Portfolio Website: React + Vite personal site with AI chatbot (this site!)
+- Portfolio Website: React + Vite personal site with AI chatbot and voice mode (this site!)
+
+TOP SKILLS (from LinkedIn):
+Large Language Models (LLM), Generative AI, Python, AWS, Machine Learning, BERT, ETL, Data Integrity, SQL, Applied Research
 
 TECH STACK:
 - GenAI & LLMs: LangChain, LangGraph, LiteLLM, CrewAI, AutoGen, Hugging Face, vLLM, Ollama
