@@ -156,6 +156,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
   const [isListening, setIsListening] = useState(false);
+  const [isDictating, setIsDictating] = useState(false);
+  const dictationRef = useRef<any>(null);
   const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const [lastBotResponse, setLastBotResponse] = useState('');
   const recognitionRef = useRef<any>(null);
@@ -319,6 +321,35 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setLoading(false);
     }
   };
+
+  // Speech-to-text for chat input (mic icon in text mode)
+  const toggleDictation = useCallback(() => {
+    if (isDictating && dictationRef.current) {
+      dictationRef.current.stop();
+      setIsDictating(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    dictationRef.current = recognition;
+
+    recognition.onstart = () => setIsDictating(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => prev ? prev + ' ' + transcript : transcript);
+      setIsDictating(false);
+    };
+    recognition.onerror = () => setIsDictating(false);
+    recognition.onend = () => setIsDictating(false);
+
+    try { recognition.start(); } catch { setIsDictating(false); }
+  }, [isDictating]);
 
   // Track whether speech was interrupted so we don't reset voiceStatus
   const interruptedRef = useRef(false);
@@ -604,6 +635,24 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                     className="flex-1 px-2 md:px-3 py-2 rounded-[12px] border border-black/10 dark:border-white/10 text-[11px] md:text-[12px] placeholder-black/40 dark:placeholder-white/40 focus:outline-none focus:border-[#1e6ef4] transition-all bg-white dark:bg-[#0f0f0f] text-black dark:text-white"
                     disabled={loading}
                   />
+                  <button
+                    type="button"
+                    onClick={toggleDictation}
+                    disabled={loading}
+                    className={`w-[34px] h-[34px] rounded-[12px] flex items-center justify-center transition-all flex-shrink-0 ${
+                      isDictating
+                        ? 'bg-red-500 text-white animate-pulse'
+                        : 'bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 hover:bg-black/10 dark:hover:bg-white/20'
+                    } disabled:opacity-50`}
+                    title={isDictating ? 'Stop listening' : 'Speak to type'}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                      <line x1="12" y1="19" x2="12" y2="23"/>
+                      <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                  </button>
                   <button
                     type="submit"
                     disabled={loading || !input.trim()}
