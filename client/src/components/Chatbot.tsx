@@ -115,6 +115,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const [lastBotResponse, setLastBotResponse] = useState('');
   const recognitionRef = useRef<any>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -295,39 +297,85 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     });
   }, [voices]);
 
-  // Ref to hold the latest handleVoiceSend so the interrupt listener can call it
-  const handleVoiceSendRef = useRef<(transcript: string) => void>(() => {});
+  // Start monitoring mic volume — returns a cleanup function
+  // Calls onVoiceDetected() when user's voice exceeds the threshold
+  const startVoiceActivityDetector = useCallback((onVoiceDetected: () => void) => {
+    let stopped = false;
+    let animFrameId: number;
 
-  // Start a background speech listener that interrupts TTS when user speaks
-  const startInterruptListener = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return null;
+    (async () => {
+      try {
+        // Reuse existing mic stream or request a new one
+        if (!micStreamRef.current) {
+          micStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        if (stopped) return;
 
-    const listener = new SpeechRecognition();
-    listener.continuous = false;
-    listener.interimResults = false;
-    listener.lang = 'en-US';
+        const audioCtx = new AudioContext();
+        audioContextRef.current = audioCtx;
+        const source = audioCtx.createMediaStreamSource(micStreamRef.current);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
 
-    listener.onresult = (event: any) => {
-      const transcript = event.results[0]?.[0]?.transcript;
-      // User spoke — interrupt TTS
-      interruptedRef.current = true;
-      window.speechSynthesis.cancel();
-      // If we got a usable transcript, send it as the next question
-      if (transcript && transcript.trim().length > 0) {
-        handleVoiceSendRef.current(transcript.trim());
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const VOLUME_THRESHOLD = 45; // 0-255, tuned for speech vs background noise
+        let consecutiveFrames = 0;
+        const FRAMES_NEEDED = 3; // Need 3 consecutive loud frames to trigger (avoids false positives)
+
+        const checkVolume = () => {
+          if (stopped) return;
+          analyser.getByteFrequencyData(dataArray);
+          // Average volume across frequency bins
+          const avg = dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
+
+          if (avg > VOLUME_THRESHOLD) {
+            consecutiveFrames++;
+            if (consecutiveFrames >= FRAMES_NEEDED) {
+              onVoiceDetected();
+              return; // Stop checking
+            }
+          } else {
+            consecutiveFrames = 0;
+          }
+          animFrameId = requestAnimationFrame(checkVolume);
+        };
+        checkVolume();
+      } catch {
+        // Mic not available — user can still tap to interrupt
+      }
+    })();
+
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(animFrameId);
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
       }
     };
+  }, []);
 
-    listener.onerror = () => { /* silently ignore — this is just a detector */ };
-    listener.onend = () => { /* will be cleaned up by caller */ };
+  // Start SpeechRecognition and return a promise that resolves with the transcript
+  const listenForSpeech = useCallback((): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) { resolve(null); return; }
 
-    try {
-      listener.start();
-    } catch {
-      return null;
-    }
-    return listener;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      recognitionRef.current = recognition;
+
+      recognition.onresult = (event: any) => {
+        resolve(event.results[0]?.[0]?.transcript || null);
+      };
+      recognition.onerror = () => resolve(null);
+      recognition.onend = () => resolve(null);
+
+      try { recognition.start(); } catch { resolve(null); }
+    });
   }, []);
 
   // Send a message in voice mode and auto-speak the reply
@@ -356,16 +404,38 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setMessages((prev) => [...prev, botMessage]);
       setLastBotResponse(responseText);
 
-      // Auto-speak the response with interrupt detection
+      // Auto-speak the response with voice activity interrupt detection
       setVoiceStatus('speaking');
-      const interruptListener = startInterruptListener();
-      const speakResult = await speakText(responseText);
-      // Clean up the interrupt listener
-      if (interruptListener) {
-        try { interruptListener.abort(); } catch { /* ignore */ }
-      }
-      // Only go back to idle if speech wasn't interrupted by user
-      if (speakResult === 'completed') {
+
+      // Race: TTS vs user voice detection
+      let stopDetector: (() => void) = () => {};
+      const speakPromise = speakText(responseText);
+      const interruptPromise = new Promise<'voice-detected'>((resolve) => {
+        const cleanup = startVoiceActivityDetector(() => resolve('voice-detected'));
+        if (cleanup) stopDetector = cleanup;
+      });
+
+      const raceResult = await Promise.race([speakPromise, interruptPromise]);
+
+      // Clean up detector
+      if (stopDetector) stopDetector();
+
+      if (raceResult === 'voice-detected') {
+        // User spoke — cancel TTS, start listening for their full utterance
+        interruptedRef.current = true;
+        window.speechSynthesis.cancel();
+        setVoiceStatus('listening');
+        setIsListening(true);
+        const newTranscript = await listenForSpeech();
+        setIsListening(false);
+        if (newTranscript && newTranscript.trim()) {
+          // Recursively handle the new question
+          await handleVoiceSend(newTranscript.trim());
+        } else {
+          setVoiceStatus('idle');
+        }
+      } else {
+        // TTS finished naturally
         setVoiceStatus('idle');
       }
     } catch {
@@ -379,12 +449,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setLastBotResponse('Sorry, I encountered an error. Please try again.');
       setVoiceStatus('idle');
     }
-  }, [speakText, startInterruptListener]);
-
-  // Keep the ref in sync with the latest handleVoiceSend
-  useEffect(() => {
-    handleVoiceSendRef.current = handleVoiceSend;
-  }, [handleVoiceSend]);
+  }, [speakText, startVoiceActivityDetector, listenForSpeech]);
 
   // Toggle microphone listening
   const toggleListening = useCallback(() => {
@@ -457,11 +522,14 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     recognition.start();
   }, [isListening, voiceStatus, handleVoiceSend]);
 
-  // Cleanup recognition on unmount
+  // Cleanup recognition and mic on unmount
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
+      if (recognitionRef.current) recognitionRef.current.abort();
+      if (audioContextRef.current) audioContextRef.current.close().catch(() => {});
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(t => t.stop());
+        micStreamRef.current = null;
       }
     };
   }, []);
@@ -471,8 +539,13 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     if (chatMode !== 'voice') {
       if (recognitionRef.current) recognitionRef.current.abort();
       window.speechSynthesis.cancel();
+      interruptedRef.current = true;
       setIsListening(false);
       setVoiceStatus('idle');
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
     }
   }, [chatMode]);
 
