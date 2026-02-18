@@ -43,9 +43,10 @@ TITLE: GenAI Architect & AI/ML Research Engineer | 6+ years experience building 
 Domains: Finance, Pharma, Retail, HR, Microfinance.
 
 EDUCATION:
-1. GrowthX — Product & Growth fellowship (Mar 2024 – Mar 2025). Skills: Customer Engagement, Product Strategy.
-2. M.E. Mechatronics, Robotics, and Automation Engineering — Anna University (M.I.T Campus), Chennai (2018–2020). Skills: Drone Building, Embedded Systems.
-(LinkedIn says "Show all 4 educations" — only these 2 are visible. If asked about undergrad, say "I did my Masters at Anna University, Chennai. For undergrad details, feel free to email me.")
+1. GrowthX — Product & Growth fellowship (Mar 2024 – Mar 2025). Skills: Customer Engagement, Product Strategy, Monetization, Customer Acquisition, Business Growth Strategies, Customer Onboarding, Customer Retention, Product Discovery, Product Development.
+2. M.E. Mechatronics, Robotics, and Automation Engineering — Anna University (M.I.T Campus), Chennai (2018–2020). Skills: Drone Building, Embedded Systems, SOLIDWORKS, Sensors, Robotics, MATLAB, AI, PLC Programming, Machine Learning, Motor Control, Control Systems Design.
+3. B.E. Mechanical Engineering — Agni College of Technology, Chennai (2013–2017). Skills: Engine, AutoCAD, Mechanical Engineering, CNC Machine, G-Code.
+4. Higher Secondary (Computer Science) — S.R.V Matric Higher Secondary School (2011–2013). Skills: C, C++.
 
 RESEARCH:
 - Solarillion Foundation, Chennai (Aug 2018 – Jul 2020, 2 years):
