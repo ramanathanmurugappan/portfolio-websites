@@ -275,21 +275,60 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     }
   };
 
+  // Track whether speech was interrupted so we don't reset voiceStatus
+  const interruptedRef = useRef(false);
+
   // Speak text using Daniel voice (reusable for voice mode auto-speak)
-  const speakText = useCallback((text: string): Promise<void> => {
+  const speakText = useCallback((text: string): Promise<'completed' | 'interrupted'> => {
     return new Promise((resolve) => {
       window.speechSynthesis.cancel();
+      interruptedRef.current = false;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.95;
       utterance.pitch = 1.05;
       const voice = voices.find((v) => v.name === 'Daniel') || voices.find((v) => v.lang.startsWith('en'));
       if (voice) utterance.voice = voice;
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve();
+      utterance.onend = () => resolve(interruptedRef.current ? 'interrupted' : 'completed');
+      utterance.onerror = () => resolve(interruptedRef.current ? 'interrupted' : 'completed');
       utteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     });
   }, [voices]);
+
+  // Ref to hold the latest handleVoiceSend so the interrupt listener can call it
+  const handleVoiceSendRef = useRef<(transcript: string) => void>(() => {});
+
+  // Start a background speech listener that interrupts TTS when user speaks
+  const startInterruptListener = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+
+    const listener = new SpeechRecognition();
+    listener.continuous = false;
+    listener.interimResults = false;
+    listener.lang = 'en-US';
+
+    listener.onresult = (event: any) => {
+      const transcript = event.results[0]?.[0]?.transcript;
+      // User spoke — interrupt TTS
+      interruptedRef.current = true;
+      window.speechSynthesis.cancel();
+      // If we got a usable transcript, send it as the next question
+      if (transcript && transcript.trim().length > 0) {
+        handleVoiceSendRef.current(transcript.trim());
+      }
+    };
+
+    listener.onerror = () => { /* silently ignore — this is just a detector */ };
+    listener.onend = () => { /* will be cleaned up by caller */ };
+
+    try {
+      listener.start();
+    } catch {
+      return null;
+    }
+    return listener;
+  }, []);
 
   // Send a message in voice mode and auto-speak the reply
   const handleVoiceSend = useCallback(async (transcript: string) => {
@@ -317,10 +356,18 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setMessages((prev) => [...prev, botMessage]);
       setLastBotResponse(responseText);
 
-      // Auto-speak the response
+      // Auto-speak the response with interrupt detection
       setVoiceStatus('speaking');
-      await speakText(responseText);
-      setVoiceStatus('idle');
+      const interruptListener = startInterruptListener();
+      const speakResult = await speakText(responseText);
+      // Clean up the interrupt listener
+      if (interruptListener) {
+        try { interruptListener.abort(); } catch { /* ignore */ }
+      }
+      // Only go back to idle if speech wasn't interrupted by user
+      if (speakResult === 'completed') {
+        setVoiceStatus('idle');
+      }
     } catch {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -332,12 +379,24 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setLastBotResponse('Sorry, I encountered an error. Please try again.');
       setVoiceStatus('idle');
     }
-  }, [speakText]);
+  }, [speakText, startInterruptListener]);
+
+  // Keep the ref in sync with the latest handleVoiceSend
+  useEffect(() => {
+    handleVoiceSendRef.current = handleVoiceSend;
+  }, [handleVoiceSend]);
 
   // Toggle microphone listening
   const toggleListening = useCallback(() => {
-    // If currently in thinking/speaking state, don't allow
-    if (voiceStatus === 'thinking' || voiceStatus === 'speaking') return;
+    // If thinking, don't allow interruption (waiting for API response)
+    if (voiceStatus === 'thinking') return;
+
+    // If speaking, interrupt — cancel speech and start listening
+    if (voiceStatus === 'speaking') {
+      interruptedRef.current = true;
+      window.speechSynthesis.cancel();
+      // Fall through to start listening below
+    }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
