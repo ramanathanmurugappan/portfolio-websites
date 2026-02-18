@@ -152,13 +152,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               );
               return { response: { text: () => assistantMessage } };
             } catch (err: any) {
-              const status = err?.status ?? err?.response?.status;
-              // Only fall through to next model on rate limit errors
-              if (status === 429 || err?.message?.toLowerCase().includes('rate limit')) {
-                lastError = err;
-                continue;
-              }
-              throw err; // Non-rate-limit error — surface immediately
+              lastError = err;
+              continue; // Any error — silently try next model
             }
           }
           throw lastError; // All models exhausted
