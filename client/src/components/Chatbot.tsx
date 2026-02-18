@@ -363,6 +363,9 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const runConversationLoop = useCallback(async () => {
     conversationActiveRef.current = true;
 
+    const SILENCE_TIMEOUT_MS = 120_000; // 2 minutes
+    let lastSpeechAt = Date.now();
+
     while (conversationActiveRef.current) {
       // 1. Listen
       const transcript = await listenOnce();
@@ -370,9 +373,16 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       if (!conversationActiveRef.current) break;
 
       if (!transcript || !transcript.trim()) {
-        // No speech detected — keep listening (retry)
+        // No speech detected — stop if silent for 120s
+        if (Date.now() - lastSpeechAt >= SILENCE_TIMEOUT_MS) {
+          setLastBotResponse("Stopped listening — no input for 2 minutes. Tap the mic to start again.");
+          stopConversation();
+          break;
+        }
         continue;
       }
+
+      lastSpeechAt = Date.now(); // reset on each spoken input
 
       if (!chatRef.current) break;
 
