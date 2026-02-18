@@ -313,30 +313,45 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
 
         const audioCtx = new AudioContext();
         audioContextRef.current = audioCtx;
+        const sampleRate = audioCtx.sampleRate;
         const source = audioCtx.createMediaStreamSource(micStreamRef.current);
         const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 512;
+        analyser.fftSize = 1024;
+        analyser.smoothingTimeConstant = 0.3;
         source.connect(analyser);
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        const VOLUME_THRESHOLD = 45; // 0-255, tuned for speech vs background noise
+        const binCount = analyser.frequencyBinCount;
+        const binFreqWidth = sampleRate / analyser.fftSize;
+
+        // Only look at speech frequency range: 300 Hz – 3400 Hz
+        const minBin = Math.floor(300 / binFreqWidth);
+        const maxBin = Math.min(Math.ceil(3400 / binFreqWidth), binCount - 1);
+
+        const VOLUME_THRESHOLD = 70; // Higher threshold to ignore ambient noise
         let consecutiveFrames = 0;
-        const FRAMES_NEEDED = 3; // Need 3 consecutive loud frames to trigger (avoids false positives)
+        const FRAMES_NEEDED = 6; // ~100ms of sustained speech at 60fps
 
         const checkVolume = () => {
           if (stopped) return;
           analyser.getByteFrequencyData(dataArray);
-          // Average volume across frequency bins
-          const avg = dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
+
+          // Average only speech-band frequencies (300–3400 Hz)
+          let sum = 0;
+          for (let i = minBin; i <= maxBin; i++) {
+            sum += dataArray[i];
+          }
+          const avg = sum / (maxBin - minBin + 1);
 
           if (avg > VOLUME_THRESHOLD) {
             consecutiveFrames++;
             if (consecutiveFrames >= FRAMES_NEEDED) {
               onVoiceDetected();
-              return; // Stop checking
+              return;
             }
           } else {
-            consecutiveFrames = 0;
+            // Decay instead of hard reset — allows brief pauses between words
+            consecutiveFrames = Math.max(0, consecutiveFrames - 1);
           }
           animFrameId = requestAnimationFrame(checkVolume);
         };
