@@ -118,11 +118,11 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       });
       // Fallback model chain — tried in order when rate limits are hit
       const MODELS = [
-        'llama-3.3-70b-versatile',   // Best quality
-        'llama-3.1-8b-instant',      // Fast, high TPM
-        'llama3-70b-8192',           // Alternate 70B
-        'gemma2-9b-it',              // Google Gemma
-        'llama3-8b-8192',            // Lightweight fallback
+        'llama-3.3-70b-versatile',        // Best quality (active)
+        'llama-3.1-8b-instant',           // Fast, high TPM (active)
+        'qwen/qwen3-32b',                 // Qwen 32B (active)
+        'llama-3.3-70b-specdec',          // Speculative decoding 70B (active)
+        'moonshotai/kimi-k2-instruct-0905', // Moonshot fallback (active)
       ];
 
       chatRef.current = {
