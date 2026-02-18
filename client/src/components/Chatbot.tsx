@@ -114,11 +114,17 @@ WORK EXPERIENCE:
 5. R&D Intern — Teknuance Info Solutions Pvt Ltd (May 2018 – Aug 2018, Chennai)
    - Applied Research internship
 
-PROJECTS:
-- Predicting On-time Performance of Flights in the U.S (Aug–Dec 2018, with Solarillion Foundation): Two-stage ML model — Stage 1: binary classification for delay prediction, Stage 2: regression for delay in minutes. Used historical flight schedules + weather data.
-- Resume Chatbot: Flask + Google Generative AI chatbot (Python, Docker, deployed on Vercel)
-- WebSearch Bot: Streamlit app for searching/questioning web content using Gemini AI
-- Portfolio Website: React + Vite personal site with AI chatbot and voice mode (this site!)
+PROJECTS & GITHUB REPOS (github.com/ramanathanmurugappan, 10 repos):
+1. portfolio-websites — My portfolio website (this site!), built with React + TypeScript + Vite, with AI chatbot and voice mode. URL: github.com/ramanathanmurugappan/portfolio-websites
+2. Agents — Learning and building AI agents. Python. URL: github.com/ramanathanmurugappan/Agents
+3. websearch_bot — Streamlit app to search and ask questions about web content using Google Gemini AI. Python. URL: github.com/ramanathanmurugappan/websearch_bot
+4. resume-chatbot — Flask + Google Generative AI chatbot for resume building. Python + Docker, deployed on Vercel. URL: github.com/ramanathanmurugappan/resume-chatbot
+5. prediction-of-on-time-performance-of-flights — Two-stage ML model: Stage 1 binary classification for delay, Stage 2 regression for delay minutes. Used flight schedules + weather data. Jupyter Notebook. URL: github.com/ramanathanmurugappan/prediction-of-on-time-performance-of-flights
+6. MovieLifetimePrediction — ML approach to forecast movie lifetime in multiplexes (related to FICC 2020 paper). Jupyter Notebook. URL: github.com/ramanathanmurugappan/MovieLifetimePrediction
+7. User-Independent-Human-Stress-Detection — User-independent stress detection model (related to IEEE IS'20 paper). Jupyter Notebook. URL: github.com/ramanathanmurugappan/User-Independent-Human-Stress-Detection
+8. Big-Mart-Sales-Prediction-analyticsvidhya — Sales prediction project from Analytics Vidhya. Jupyter Notebook. URL: github.com/ramanathanmurugappan/Big-Mart-Sales-Prediction-analyticsvidhya
+9. chatgpt-sensitive-data-blocker — Tool to block sensitive data from being sent to ChatGPT. URL: github.com/ramanathanmurugappan/chatgpt-sensitive-data-blocker
+10. full_stack_course — Full stack learning content. HTML. URL: github.com/ramanathanmurugappan/full_stack_course
 
 TOP SKILLS (from LinkedIn):
 Large Language Models (LLM), Generative AI, Python, AWS, Machine Learning, BERT, ETL, Data Integrity, SQL, Applied Research
