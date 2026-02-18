@@ -205,6 +205,15 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         baseURL: 'https://api.groq.com/openai/v1',
         dangerouslyAllowBrowser: true,
       });
+      // Fallback model chain — tried in order when rate limits are hit
+      const MODELS = [
+        'llama-3.3-70b-versatile',   // Best quality
+        'llama-3.1-8b-instant',      // Fast, high TPM
+        'llama3-70b-8192',           // Alternate 70B
+        'gemma2-9b-it',              // Google Gemma
+        'llama3-8b-8192',            // Lightweight fallback
+      ];
+
       chatRef.current = {
         history: [] as { role: string; content: string }[],
         sendMessage: async (message: string) => {
@@ -213,24 +222,35 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
             ...chatRef.current.history,
             { role: 'user' as const, content: message },
           ];
-          const completion = await openaiRef.current!.chat.completions.create({
-            messages: allMessages,
-            model: 'llama-3.3-70b-versatile',  // High quality model with 1,000 RPD
-            temperature: 0.7,
-            max_tokens: 4096,
-            top_p: 1,
-            stream: false,
-          });
-          const assistantMessage = completion.choices[0]?.message?.content || '';
-          chatRef.current.history.push(
-            { role: 'user', content: message },
-            { role: 'assistant', content: assistantMessage }
-          );
-          return {
-            response: {
-              text: () => assistantMessage,
-            },
-          };
+
+          let lastError: any;
+          for (const model of MODELS) {
+            try {
+              const completion = await openaiRef.current!.chat.completions.create({
+                messages: allMessages,
+                model,
+                temperature: 0.7,
+                max_tokens: 300,  // Keep short — bot gives 1-2 line answers; 4096 burns TPM fast
+                top_p: 1,
+                stream: false,
+              });
+              const assistantMessage = completion.choices[0]?.message?.content || '';
+              chatRef.current.history.push(
+                { role: 'user', content: message },
+                { role: 'assistant', content: assistantMessage }
+              );
+              return { response: { text: () => assistantMessage } };
+            } catch (err: any) {
+              const status = err?.status ?? err?.response?.status;
+              // Only fall through to next model on rate limit errors
+              if (status === 429 || err?.message?.toLowerCase().includes('rate limit')) {
+                lastError = err;
+                continue;
+              }
+              throw err; // Non-rate-limit error — surface immediately
+            }
+          }
+          throw lastError; // All models exhausted
         },
       };
     } catch (error) {
