@@ -308,12 +308,23 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
+      const status = error?.status ?? error?.response?.status;
+      let friendlyMsg: string;
+      if (status === 429 || error?.message?.toLowerCase().includes('rate limit')) {
+        friendlyMsg = "I've hit my API rate limit for now. Please try again in a few minutes — or come back tomorrow. Sorry for the inconvenience!";
+      } else if (status === 401 || error?.message?.toLowerCase().includes('api key')) {
+        friendlyMsg = "There's an API key configuration issue. Please contact me at ramanathanmurugappan29@gmail.com.";
+      } else if (error?.message?.toLowerCase().includes('network') || error?.message?.toLowerCase().includes('fetch')) {
+        friendlyMsg = "Network error — please check your internet connection and try again.";
+      } else {
+        friendlyMsg = `Something went wrong: ${error?.message || 'Unknown error'}. Please try again later.`;
+      }
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: friendlyMsg,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -470,15 +481,26 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         if (!conversationActiveRef.current) break;
 
         // 4. Loop back to listening
-      } catch {
+      } catch (error: any) {
+        const status = error?.status ?? error?.response?.status;
+        let friendlyMsg: string;
+        if (status === 429 || error?.message?.toLowerCase().includes('rate limit')) {
+          friendlyMsg = "I've hit my API rate limit for now. Please try again in a few minutes — or come back tomorrow. Sorry for the inconvenience!";
+        } else if (status === 401 || error?.message?.toLowerCase().includes('api key')) {
+          friendlyMsg = "There's an API key configuration issue. Please contact me at ramanathanmurugappan29@gmail.com.";
+        } else if (error?.message?.toLowerCase().includes('network') || error?.message?.toLowerCase().includes('fetch')) {
+          friendlyMsg = "Network error — please check your internet connection and try again.";
+        } else {
+          friendlyMsg = `Something went wrong: ${error?.message || 'Unknown error'}. Please try again later.`;
+        }
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'bot',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: friendlyMsg,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, errorMessage]);
-        setLastBotResponse('Sorry, I encountered an error. Please try again.');
+        setLastBotResponse(friendlyMsg);
         // Continue the loop — don't break on errors
       }
     }
