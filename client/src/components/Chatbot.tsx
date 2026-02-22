@@ -338,15 +338,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       };
 
       recognition.onresult = (event: any) => {
-        const result = event.results[0][0];
-        const transcript = result.transcript.trim();
-        const confidence = result.confidence;
+        const transcript = event.results[0][0].transcript;
         setIsListening(false);
-        // Reject low-confidence results (background noise, fan noise, distant voices)
-        if (confidence < 0.80 || transcript.length < 2) {
-          resolve(null);
-          return;
-        }
         resolve(transcript);
       };
 
