@@ -87,21 +87,25 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const openaiRef = useRef<OpenAI | null>(null);
   const chatRef = useRef<any>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Load available voices (they load asynchronously)
-  useEffect(() => {
-    const loadVoices = () => {
-      const available = window.speechSynthesis.getVoices();
-      if (available.length > 0) {
-        setVoices(available);
-      }
-    };
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    return () => { window.speechSynthesis.onvoiceschanged = null; };
-  }, []);
+  // VoiceRSS TTS — Indian English male voice, returns audio ArrayBuffer
+  const elevenLabsTTS = async (text: string): Promise<ArrayBuffer> => {
+    const apiKey = import.meta.env.VITE_VOICERSS_API_KEY;
+    const params = new URLSearchParams({
+      key: apiKey,
+      hl: 'en-in',
+      v: 'Ajit',
+      src: text,
+      c: 'MP3',
+      f: '44khz_16bit_stereo',
+      ssml: 'false',
+      b64: 'false',
+    });
+    const response = await fetch(`https://api.voicerss.org/?${params.toString()}`);
+    if (!response.ok) throw new Error(`VoiceRSS TTS error: ${response.status}`);
+    return response.arrayBuffer();
+  };
 
   // Initialize OpenAI SDK with Groq base URL
   useEffect(() => {
@@ -172,38 +176,39 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     scrollToBottom();
   }, [messages]);
 
-  // Cleanup speech synthesis on unmount
+  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 
-  const handleSpeak = (text: string, messageId: string) => {
+  const handleSpeak = async (text: string, messageId: string) => {
     // If already speaking this message, stop it
     if (speakingMessageId === messageId) {
-      window.speechSynthesis.cancel();
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
       setSpeakingMessageId(null);
       return;
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.05;
-
-    // Use Daniel voice, fall back to any English voice
-    const voice = voices.find((v) => v.name === 'Daniel') || voices.find((v) => v.lang.startsWith('en'));
-    if (voice) utterance.voice = voice;
-
-    utterance.onend = () => setSpeakingMessageId(null);
-    utterance.onerror = () => setSpeakingMessageId(null);
-
-    utteranceRef.current = utterance;
+    // Stop any ongoing audio
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     setSpeakingMessageId(messageId);
-    window.speechSynthesis.speak(utterance);
+
+    try {
+      const buffer = await elevenLabsTTS(text);
+      const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }));
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; setSpeakingMessageId(null); };
+      audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; setSpeakingMessageId(null); };
+      await audio.play();
+    } catch {
+      setSpeakingMessageId(null);
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -291,22 +296,25 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   // Track whether speech was interrupted so we don't reset voiceStatus
   const interruptedRef = useRef(false);
 
-  // Speak text using Daniel voice (reusable for voice mode auto-speak)
+  // Speak text using Fish Audio cloned voice (reusable for voice mode auto-speak)
   const speakText = useCallback((text: string): Promise<'completed' | 'interrupted'> => {
-    return new Promise((resolve) => {
-      window.speechSynthesis.cancel();
+    return new Promise(async (resolve) => {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
       interruptedRef.current = false;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.05;
-      const voice = voices.find((v) => v.name === 'Daniel') || voices.find((v) => v.lang.startsWith('en'));
-      if (voice) utterance.voice = voice;
-      utterance.onend = () => resolve(interruptedRef.current ? 'interrupted' : 'completed');
-      utterance.onerror = () => resolve(interruptedRef.current ? 'interrupted' : 'completed');
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+      try {
+        const buffer = await elevenLabsTTS(text);
+        if (interruptedRef.current) { resolve('interrupted'); return; }
+        const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }));
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; resolve(interruptedRef.current ? 'interrupted' : 'completed'); };
+        audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; resolve(interruptedRef.current ? 'interrupted' : 'completed'); };
+        await audio.play();
+      } catch {
+        resolve('completed');
+      }
     });
-  }, [voices]);
+  }, []);
 
   // Listen for a single utterance — returns the transcript or null
   const listenOnce = useCallback((): Promise<string | null> => {
@@ -451,7 +459,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch { /* ignore */ }
     }
-    window.speechSynthesis.cancel();
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     interruptedRef.current = true;
     setIsListening(false);
     setVoiceStatus('idle');
