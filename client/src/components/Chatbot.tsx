@@ -358,8 +358,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
           setLastBotResponse('Speech service blocked. Please access via localhost:3000 (not a network IP) or use HTTPS.');
         } else if (event.error === 'network') {
           setLastBotResponse('Network error — speech recognition requires an internet connection.');
-        } else if (event.error === 'no-speech') {
-          // Not an error in conversation mode — just no speech detected this round
+        } else if (event.error === 'no-speech' || event.error === 'aborted') {
+          // Expected — no speech detected or recognition stopped programmatically
         } else {
           setLastBotResponse(`Speech recognition error: ${event.error}`);
         }
