@@ -37,6 +37,7 @@ jobs:
         run: npm run build
         env:
           VITE_GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          VITE_VOICERSS_API_KEY: ${{ secrets.VITE_VOICERSS_API_KEY }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
