@@ -343,9 +343,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         const confidence = result.confidence;
         setIsListening(false);
         // Reject low-confidence results (background noise, fan noise, distant voices)
-        // and single-word/short captures that are likely noise artifacts
-        const wordCount = transcript.split(/\s+/).filter(Boolean).length;
-        if (confidence < 0.80 || transcript.length < 4 || wordCount < 2) {
+        if (confidence < 0.80 || transcript.length < 2) {
           resolve(null);
           return;
         }
