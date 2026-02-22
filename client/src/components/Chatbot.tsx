@@ -342,9 +342,10 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         const transcript = result.transcript.trim();
         const confidence = result.confidence;
         setIsListening(false);
-        // Reject low-confidence results (background noise, distant voices)
-        // and very short captures (random syllables)
-        if (confidence < 0.65 || transcript.length < 3 || transcript.split(' ').length < 1) {
+        // Reject low-confidence results (background noise, fan noise, distant voices)
+        // and single-word/short captures that are likely noise artifacts
+        const wordCount = transcript.split(/\s+/).filter(Boolean).length;
+        if (confidence < 0.80 || transcript.length < 4 || wordCount < 2) {
           resolve(null);
           return;
         }
