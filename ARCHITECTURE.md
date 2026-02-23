@@ -1,319 +1,116 @@
-# Architecture Diagram — ram96.com Portfolio
+# Architecture — ram96.com
 
-## 1. System Overview
+![Architecture Diagram](./architecture.png)
+
+---
+
+## System Architecture
 
 ```mermaid
 graph TB
-    subgraph Browser["🌐 Browser (Client-Side Only — No Backend)"]
-        direction TB
-        subgraph React["React 19 + TypeScript + Vite 7"]
-            App["App.tsx\n(Root)"]
-            Theme["ThemeContext\n(dark / light)"]
-            Router["Wouter Router\n(SPA routing)"]
-            Home["Home.tsx\n(single page)"]
-            Nav["Navigation\n(bottom bar)"]
-            Chat["Chatbot.tsx\n(780 lines)"]
-            Sections["Portfolio Sections\n(Hero → Contact)"]
+    User(["👤 User\n(Browser)"])
+
+    subgraph Client["CLIENT  ·  React 19 + TypeScript + Vite 7  ·  100% Client-Side, No Backend"]
+        direction LR
+
+        subgraph UI["UI Layer"]
+            Hero["Hero"]
+            About["About"]
+            Projects["Projects"]
+            TechStack["Tech Stack"]
+            Education["Education"]
+            Achievements["Achievements"]
+            Contact["Contact"]
         end
-        LS["localStorage\n'theme' key"]
-        WA["Web Audio API\n(silence detection)"]
-        MR["MediaRecorder API\n(voice capture)"]
-        Audio["Audio Element\n(TTS playback)"]
+
+        subgraph AppCore["App Core"]
+            ThemeCtx["ThemeContext\n(dark / light)"]
+            Router["Wouter Router"]
+            NavBar["Navigation Bar"]
+        end
+
+        subgraph ChatEngine["AI Chatbot Engine"]
+            TextMode["Text Mode\n(type & send)"]
+            VoiceMode["Voice Mode\n(hands-free loop)"]
+            TTSPlayer["TTS Player\n(Audio Element)"]
+        end
+
+        subgraph BrowserAPIs["Browser APIs"]
+            MediaRec["MediaRecorder API\n(voice capture)"]
+            WebAudio["Web Audio API\n(silence detection)"]
+            LocalStore["localStorage\n(theme)"]
+        end
     end
 
-    subgraph ExternalAPIs["☁️ External APIs (called directly from browser)"]
-        Groq["⚡ Groq API\napi.groq.com/openai/v1\nLLM inference"]
-        Deepgram["🎙️ Deepgram\napi.deepgram.com\nSpeech-to-Text"]
-        VoiceRSS["🔊 VoiceRSS\napi.voicerss.org\nText-to-Speech"]
+    subgraph ExternalAPIs["EXTERNAL APIs  ·  Called directly from browser over HTTPS"]
+        direction TB
+        Groq["⚡ Groq API\napi.groq.com/openai/v1\n─────────────────\nllama-3.3-70b-versatile\nllama-3.1-8b-instant\nqwen/qwen3-32b\nllama-3.3-70b-specdec\nkimi-k2-instruct\n(5-model fallback)"]
+        Deepgram["🎙️ Deepgram\napi.deepgram.com\n─────────────────\nnova-2 model\nSpeech → Text"]
+        VoiceRSS["🔊 VoiceRSS\napi.voicerss.org\n─────────────────\nen-in · Ajit voice\nText → MP3"]
     end
 
-    subgraph Hosting["🚀 Hosting"]
-        GHP["GitHub Pages\nram96.com\n(via CNAME)"]
-        GHA["GitHub Actions\nCI/CD Pipeline"]
+    subgraph CICD["CI / CD  ·  GitHub Actions → GitHub Pages"]
+        direction LR
+        Push["git push\nmaster"]
+        GHA["GitHub Actions\ndeploy.yml\n─────────────\nNode 22.12.0\nnpm install\nvite build"]
+        Secrets["GitHub Secrets\nVITE_GROQ_API_KEY\nVITE_DEEPGRAM_API_KEY\nVITE_VOICERSS_API_KEY"]
+        Pages["GitHub Pages\ndist/public/"]
+        Domain["🌐 ram96.com\n(CNAME)"]
     end
 
-    App --> Theme
-    App --> Router
-    Router --> Home
-    Home --> Nav
-    Home --> Sections
-    Home --> Chat
-    Theme <--> LS
+    User -->|"visits"| Client
+    TextMode -->|"POST chat completion\nBearer GROQ_KEY\nmax_tokens: 300"| Groq
+    VoiceMode -->|"POST audio/webm blob\nToken DEEPGRAM_KEY"| Deepgram
+    TTSPlayer -->|"GET ?hl=en-in&v=Ajit\nVOICERSS_KEY"| VoiceRSS
+    VoiceMode --> MediaRec
+    VoiceMode --> WebAudio
+    ThemeCtx <-->|"read / write"| LocalStore
 
-    Chat -->|"POST JSON\nBearer GROQ_KEY"| Groq
-    Chat -->|"POST audio blob\nBearer DEEPGRAM_KEY"| Deepgram
-    Chat -->|"GET mp3\n?key=VOICERSS_KEY"| VoiceRSS
-    Chat --> WA
-    Chat --> MR
-    Chat --> Audio
+    Groq -->|"chat completion JSON"| TextMode
+    Deepgram -->|"transcript JSON"| VoiceMode
+    VoiceRSS -->|"MP3 ArrayBuffer"| TTSPlayer
 
-    Deepgram -->|"transcript JSON"| Chat
-    VoiceRSS -->|"ArrayBuffer mp3"| Chat
-    Groq -->|"chat completion JSON"| Chat
-
-    GHA -->|"npm build\ndist/public/"| GHP
+    Push --> GHA
+    Secrets -->|"injected at build"| GHA
+    GHA --> Pages
+    Pages --> Domain
 ```
 
 ---
 
-## 2. React Component Tree
-
-```mermaid
-graph TD
-    App["App.tsx"]
-    EB["ErrorBoundary"]
-    TP["ThemeProvider\n(context: theme, toggleTheme)"]
-    TTP["TooltipProvider\n(Radix UI)"]
-    Toaster["Toaster\n(sonner)"]
-    RR["Wouter Router"]
-    Home["Home.tsx"]
-
-    TT["ThemeToggle\n(top-right ☀️/🌙)"]
-    Hero["Hero\n(avatar + headline)"]
-    Marquee1["Marquee ←\n(stats badges)"]
-    Marquee2["Marquee →\n(skills badges)"]
-    About["AboutSection\n(bento grid)"]
-    Projects["Projects\n(slider carousel)"]
-    Tech["TechStack\n(7 categories)"]
-    Edu["Education\n(degree card)"]
-    Ach["Achievements\n(awards + papers)"]
-    Contact["Contact\n(cards + social links)"]
-    Footer["Footer"]
-    NavBar["Navigation\n(bottom fixed bar)"]
-    Chatbot["Chatbot\n(fixed bottom-right)"]
-
-    App --> EB
-    EB --> TP
-    TP --> TTP
-    TTP --> Toaster
-    TTP --> RR
-    RR --> Home
-
-    Home --> TT
-    Home --> Hero
-    Home --> About
-    Home --> Projects
-    Home --> Tech
-    Home --> Edu
-    Home --> Ach
-    Home --> Contact
-    Home --> Footer
-    Home --> NavBar
-    Home --> Chatbot
-
-    Hero --> Marquee1
-    Hero --> Marquee2
-
-    NavBar -->|"controls isOpen"| Chatbot
-```
-
----
-
-## 3. AI Chatbot — Text Mode Flow
+## Voice Conversation Flow
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant Input as Input Field
-    participant State as React State
-    participant Groq as Groq API<br/>(api.groq.com)
-    participant TTS as VoiceRSS TTS<br/>(api.voicerss.org)
-    participant Audio as Audio Element
+    participant Mic  as MediaRecorder + Web Audio API
+    participant DG   as Deepgram STT
+    participant Groq as Groq LLM (5-model fallback)
+    participant TTS  as VoiceRSS TTS
+    participant Spkr as Audio Element
 
-    User->>Input: Types message + hits Send
-    Input->>State: setMessages([...userMsg])
-    Input->>State: setLoading(true)
-    State->>Groq: POST /openai/v1/chat/completions<br/>model: llama-3.3-70b-versatile<br/>max_tokens: 300
-    alt Success
-        Groq-->>State: { choices[0].message.content }
-        State->>State: setMessages([...botMsg])
-    else Rate limit (429) → try next model
-        Groq-->>State: 429 error
-        State->>Groq: Retry with llama-3.1-8b-instant
-        Note over State,Groq: Fallback chain:<br/>70b → 8b → Qwen-32B → 70b-specdec → Kimi-K2
+    User  ->> Mic  : Tap 🎙️ — start conversation
+    loop Hands-free loop (until stopped)
+        Mic   ->> Mic  : Capture audio, detect silence (RMS < 0.015 for 1.5 s)
+        Mic   ->> DG   : POST audio/webm  [nova-2]
+        DG  -->> Mic   : { transcript }
+        Mic   ->> Groq : chat.completions (system = PROFILE_CONTEXT)
+        Groq-->> TTS   : responseText
+        TTS   ->> Spkr : GET mp3  [en-in / Ajit]
+        Spkr-->> User  : Plays response aloud
     end
-    State->>State: setLoading(false)
-    User->>Audio: Clicks 🔈 on bot message
-    State->>TTS: GET ?key=KEY&hl=en-in&v=Ajit&src=text
-    TTS-->>Audio: MP3 ArrayBuffer
-    Audio->>User: Plays Indian English voice
+    User  ->> Mic  : Tap again — stop
 ```
 
 ---
 
-## 4. AI Chatbot — Voice Mode Flow
+## Key Facts
 
-```mermaid
-sequenceDiagram
-    actor User
-    participant Mic as MediaRecorder<br/>+ Web Audio API
-    participant DG as Deepgram STT<br/>(nova-2 model)
-    participant Groq as Groq API<br/>(5-model fallback)
-    participant TTS as VoiceRSS TTS<br/>(Ajit voice)
-    participant Audio as Audio Element
-
-    User->>Mic: Taps 🎙️ (toggleListening)
-    loop Conversation Loop (until stopped or 2min silence)
-        Note over Mic: voiceStatus = 'listening'
-        Mic->>Mic: getUserMedia() → stream
-        Mic->>Mic: RMS silence detection<br/>(threshold 0.015, 1.5s gap, 10s max)
-        Mic->>DG: POST audio/webm blob<br/>Authorization: Token DEEPGRAM_KEY
-        DG-->>Mic: { transcript }
-        Note over Groq: voiceStatus = 'thinking'
-        Mic->>Groq: sendMessage(transcript)<br/>with PROFILE_CONTEXT system prompt
-        Groq-->>Audio: responseText
-        Note over Audio: voiceStatus = 'speaking'
-        Audio->>TTS: GET VoiceRSS mp3
-        TTS-->>Audio: ArrayBuffer
-        Audio->>User: Plays response aloud
-        Note over Mic: Loop back → 'listening'
-    end
-    User->>Mic: Taps again → stopConversation()
-```
-
----
-
-## 5. Build & Deploy Pipeline
-
-```mermaid
-graph LR
-    Dev["👨‍💻 Developer\ngit push master"]
-
-    subgraph GHA["GitHub Actions (.github/workflows/deploy.yml)"]
-        Trigger["Trigger:\npush to master"]
-        Setup["Node.js 22.12.0\nnpm install"]
-        Secrets["Inject Secrets\nVITE_GROQ_API_KEY\nVITE_VOICERSS_API_KEY\nVITE_DEEPGRAM_API_KEY"]
-        Build["vite build\n→ dist/public/"]
-        Upload["Upload artifact\ndist/public/"]
-        Deploy["actions/deploy-pages@v4"]
-    end
-
-    subgraph Output["🌐 Live Site"]
-        GHP["GitHub Pages"]
-        Domain["ram96.com\n(CNAME → ramanathanmurugappan\n.github.io/portfolio)"]
-    end
-
-    Dev --> Trigger
-    Trigger --> Setup
-    Setup --> Secrets
-    Secrets --> Build
-    Build --> Upload
-    Upload --> Deploy
-    Deploy --> GHP
-    GHP --> Domain
-```
-
----
-
-## 6. Data & State Flow
-
-```mermaid
-graph TD
-    subgraph Env["🔐 Build-time Env Vars (.env.local → GitHub Secrets)"]
-        E1["VITE_GROQ_API_KEY"]
-        E2["VITE_DEEPGRAM_API_KEY"]
-        E3["VITE_VOICERSS_API_KEY"]
-    end
-
-    subgraph Theme["🎨 Theme State"]
-        TC["ThemeContext"]
-        LS["localStorage\n'theme'"]
-        DOM["<html class='dark'>"]
-        CSS["CSS Variables\n--white / --black\n--badge-*-bg / text"]
-    end
-
-    subgraph Chat["💬 Chatbot State (React Refs + State)"]
-        MS["messages[]\n(history)"]
-        CH["chatRef\n(Groq session + history)"]
-        AR["audioRef\n(current TTS audio)"]
-        RR["recorderRef\n(MediaRecorder)"]
-        CR["conversationActiveRef\n(loop flag)"]
-    end
-
-    subgraph APIs["☁️ External APIs"]
-        G["Groq\n(LLM)"]
-        D["Deepgram\n(STT)"]
-        V["VoiceRSS\n(TTS)"]
-    end
-
-    E1 -->|"import.meta.env"| CH
-    E2 -->|"import.meta.env"| RR
-    E3 -->|"import.meta.env"| AR
-
-    TC <--> LS
-    TC --> DOM
-    DOM --> CSS
-
-    CH -->|"POST"| G
-    G -->|"response text"| MS
-    RR -->|"audio blob"| D
-    D -->|"transcript"| CH
-    MS -->|"text"| V
-    V -->|"mp3"| AR
-```
-
----
-
-## 7. Tech Stack Summary
-
-```mermaid
-mindmap
-  root((ram96.com))
-    Frontend
-      React 19
-      TypeScript 5.6
-      Vite 7
-      Tailwind CSS v4
-      Framer Motion
-      Wouter Router
-    UI Components
-      Shadcn UI
-      Radix UI Primitives
-      Lucide Icons
-    AI & Voice
-      Groq API
-        llama-3.3-70b
-        llama-3.1-8b
-        qwen-32b
-        5-model fallback
-      Deepgram STT
-        nova-2 model
-        MediaRecorder
-        Web Audio API
-      VoiceRSS TTS
-        Indian English
-        Ajit voice
-        MP3 streaming
-    Hosting & CI/CD
-      GitHub Pages
-      GitHub Actions
-      Custom Domain
-        ram96.com
-    Design System
-      Dark Mode
-        CSS Variables
-        localStorage
-      Responsive
-        768px breakpoint
-      Animations
-        Marquee
-        Card hover
-        Slide transitions
-```
-
----
-
-## Key Numbers
-
-| Metric | Value |
-|--------|-------|
-| Total components | 13 major + 12 UI primitives |
-| Lines of TSX/TS | ~3,005 |
-| Lines of CSS | ~675 |
-| External APIs | 3 (Groq, Deepgram, VoiceRSS) |
-| LLM fallback models | 5 |
-| Tech stack categories | 7 |
-| Technologies listed | 70+ |
-| Build output | `dist/public/` → GitHub Pages |
-| Live URL | [ram96.com](https://ram96.com) |
-| Backend | None — 100% client-side |
+| | |
+|---|---|
+| **Backend** | None — 100% client-side SPA |
+| **LLM fallback chain** | 5 models (70b → 8b → Qwen-32B → 70b-specdec → Kimi-K2) |
+| **Voice pipeline** | Deepgram STT → Groq LLM → VoiceRSS TTS |
+| **Theme** | CSS variables + localStorage, zero flash on load |
+| **Build** | Vite 7 → `dist/public/` → GitHub Pages |
+| **Live URL** | [ram96.com](https://ram96.com) |

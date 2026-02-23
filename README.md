@@ -31,6 +31,12 @@ npm run preview
 
 The development server will run at `http://localhost:3000/`
 
+## 🏗️ Architecture
+
+![Architecture Diagram](./architecture.png)
+
+> Full diagram details in [ARCHITECTURE.md](./ARCHITECTURE.md)
+
 ## 📁 Project Structure
 
 ```
