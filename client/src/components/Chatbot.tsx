@@ -72,6 +72,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const [lastBotResponse, setLastBotResponse] = useState('');
   const recognitionRef = useRef<any>(null);
+  const recorderRef = useRef<{ recorder: MediaRecorder; stream: MediaStream } | null>(null);
   const conversationActiveRef = useRef(false);
   
   // Use external state if provided, otherwise use internal state
@@ -316,54 +317,100 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     });
   }, []);
 
-  // Listen for a single utterance — returns the transcript or null
+  // Listen for a single utterance using MediaRecorder + Deepgram (works in all browsers)
   const listenOnce = useCallback((): Promise<string | null> => {
-    return new Promise((resolve) => {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        setLastBotResponse('Speech recognition is not supported in this browser. Please use Chrome.');
+    return new Promise(async (resolve) => {
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err: any) {
+        setIsListening(false);
+        if (err.name === 'NotAllowedError') {
+          setLastBotResponse('Microphone access denied. Please allow microphone permission and try again.');
+        } else {
+          setLastBotResponse('Could not access microphone. Please check your browser settings.');
+        }
         resolve(null);
         return;
       }
 
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      recognitionRef.current = recognition;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-        setVoiceStatus('listening');
-      };
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setIsListening(false);
-        resolve(transcript);
-      };
-
-      recognition.onerror = (event: any) => {
-        setIsListening(false);
-        if (event.error === 'not-allowed') {
-          setLastBotResponse('Microphone access denied. Please allow microphone permission and try again.');
-        } else if (event.error === 'service-not-allowed') {
-          setLastBotResponse('Speech service blocked. Please access via localhost:3000 (not a network IP) or use HTTPS.');
-        } else if (event.error === 'network') {
-          setLastBotResponse('Network error — speech recognition requires an internet connection.');
-        } else if (event.error === 'no-speech' || event.error === 'aborted') {
-          // Expected — no speech detected or recognition stopped programmatically
-        } else {
-          setLastBotResponse(`Speech recognition error: ${event.error}`);
-        }
+      if (!conversationActiveRef.current) {
+        stream.getTracks().forEach(t => t.stop());
         resolve(null);
+        return;
+      }
+
+      // Pick best supported mime type across Chrome/Firefox/Safari
+      const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
+        .find(t => MediaRecorder.isTypeSupported(t)) || '';
+
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const chunks: Blob[] = [];
+      recorderRef.current = { recorder: mediaRecorder, stream };
+
+      // Silence detection via Web Audio API
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Float32Array(bufferLength);
+      const SILENCE_THRESHOLD = 0.015;
+      const SILENCE_DURATION = 1500; // stop after 1.5s of silence post-speech
+      const MAX_DURATION = 10000;    // 10s hard cap
+      const startTime = Date.now();
+      let speechStarted = false;
+      let silenceStart = 0;
+
+      const stopRecording = () => {
+        if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+        stream.getTracks().forEach(t => t.stop());
+        audioContext.close();
+        recorderRef.current = null;
       };
 
-      recognition.onend = () => {
+      const checkAudio = () => {
+        if (!conversationActiveRef.current || mediaRecorder.state !== 'recording') return;
+        analyser.getFloatTimeDomainData(dataArray);
+        const rms = Math.sqrt(dataArray.reduce((s, v) => s + v * v, 0) / bufferLength);
+        if (rms > SILENCE_THRESHOLD) {
+          speechStarted = true;
+          silenceStart = 0;
+        } else if (speechStarted) {
+          if (!silenceStart) silenceStart = Date.now();
+          if (Date.now() - silenceStart > SILENCE_DURATION) { stopRecording(); return; }
+        }
+        if (Date.now() - startTime > MAX_DURATION) { stopRecording(); return; }
+        requestAnimationFrame(checkAudio);
+      };
+
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+
+      mediaRecorder.onstop = async () => {
         setIsListening(false);
+        if (chunks.length === 0) { resolve(null); return; }
+        const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+        try {
+          const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY;
+          const res = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&language=en&smart_format=true', {
+            method: 'POST',
+            headers: { 'Authorization': `Token ${apiKey}`, 'Content-Type': mimeType || 'audio/webm' },
+            body: blob,
+          });
+          const data = await res.json();
+          const transcript = data.results?.channels[0]?.alternatives[0]?.transcript?.trim() || null;
+          resolve(transcript);
+        } catch {
+          resolve(null);
+        }
       };
 
-      try { recognition.start(); } catch { resolve(null); }
+      setIsListening(true);
+      setVoiceStatus('listening');
+      mediaRecorder.start(100);
+      requestAnimationFrame(checkAudio);
     });
   }, []);
 
@@ -456,8 +503,9 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   // Stop the conversation loop
   const stopConversation = useCallback(() => {
     conversationActiveRef.current = false;
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch { /* ignore */ }
+    if (recorderRef.current) {
+      try { recorderRef.current.recorder.stop(); recorderRef.current.stream.getTracks().forEach(t => t.stop()); } catch { /* ignore */ }
+      recorderRef.current = null;
     }
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     interruptedRef.current = true;
