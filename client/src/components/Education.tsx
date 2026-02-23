@@ -3,29 +3,17 @@
  * Features: Degree and institution information
  */
 
+import SectionHeader from './SectionHeader';
+
 export default function Education() {
   return (
     <div className="container flex flex-col gap-[40px]">
-      {/* Section Header */}
-      <div className="flex flex-col gap-[8px]">
-        <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
-          🎓 Education
-        </span>
-        <h2 className="text-[40px] leading-[116%] tracking-[-0.02em] font-semibold">
-          Academic Background
-        </h2>
-      </div>
+      <SectionHeader eyebrow="🎓 Education" title="Academic Background" />
 
       {/* Education Card */}
-      <div 
-        className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] flex flex-col md:flex-row items-center justify-between gap-[24px]"
-        style={{ border: '1px solid rgba(0,0,0,0.04)' }}
-      >
+      <div className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] flex flex-col md:flex-row items-center justify-between gap-[24px] card-hover">
         <div className="flex flex-col gap-[8px]">
-          <span 
-            className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[11px] tracking-[0.02em] font-semibold w-fit"
-            style={{ border: '1px solid rgba(0,0,0,0.04)' }}
-          >
+          <span className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[11px] tracking-[0.02em] font-semibold w-fit subtle-border">
             🎓 2018 - 2020
           </span>
           <h3 className="text-[28px] leading-[116%] tracking-[-0.02em] font-semibold">
@@ -37,10 +25,7 @@ export default function Education() {
         </div>
 
         {/* Research Experience */}
-        <div 
-          className="rounded-[24px] bg-white dark:bg-[#0f0f0f] p-[24px] flex flex-col gap-[8px] max-w-[400px]"
-          style={{ border: '1px solid rgba(0,0,0,0.04)' }}
-        >
+        <div className="rounded-[24px] bg-white dark:bg-[#0f0f0f] p-[24px] flex flex-col gap-[8px] max-w-[400px] card-hover">
           <span className="text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
             🔬 Research Experience
           </span>

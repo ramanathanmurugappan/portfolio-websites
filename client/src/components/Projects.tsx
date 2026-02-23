@@ -4,128 +4,10 @@
  * Content matches resume exactly
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface Project {
-  id: number;
-  name: string;
-  company: string;
-  period: string;
-  description: string;
-  highlights: string[];
-  techStack: string[];
-  image: string;
-}
-
-const projects: Project[] = [
-  {
-    id: 1,
-    name: 'HR RAG Application',
-    company: 'ITC Infotech',
-    period: "Mar'25 - Present",
-    description: 'High-performance RAG application for HR knowledge base with 700+ documents.',
-    highlights: [
-      'Architected a high-performance RAG application for the HR knowledge base with 700+ documents using Docling for document parsing',
-      'Engineered a multi-vector RAG pipeline with hybrid search (OpenSearch)',
-      'Integrated Agentic RAG capabilities via the Open WebUI frontend',
-      'Built an eval and observability stack with DeepEval, LangSmith, and Langfuse',
-    ],
-    techStack: ['Docling', 'OpenSearch', 'Open WebUI', 'DeepEval', 'LangSmith', 'Langfuse'],
-    image: '/images/project-hr-rag.png',
-  },
-  {
-    id: 2,
-    name: 'ServiceNow Multi-Agent System',
-    company: 'ITC Infotech',
-    period: "Mar'25 - Present",
-    description: 'Multi-agent architecture for end-to-end ServiceNow automation.',
-    highlights: [
-      'Led development of a multi-agent architecture for end-to-end ServiceNow automation',
-      'Implemented a Master Orchestrator Agent that leverages MCP for dynamic agent routing and execution',
-    ],
-    techStack: ['MCP', 'Multi-Agent Systems', 'LangGraph', 'ServiceNow'],
-    image: '/images/project-servicenow.png',
-  },
-  {
-    id: 3,
-    name: 'Retail Lens',
-    company: 'Accenture',
-    period: "Aug'21 - Mar'25",
-    description: 'Visual search tool for retail product discovery.',
-    highlights: [
-      'Engineered a visual search tool using SAM for background removal and Clip-ViT-B for image embeddings',
-      'Integrated a Qdrant vector database, significantly improving user experience in visual product searches',
-    ],
-    techStack: ['SAM', 'Clip-ViT-B', 'Qdrant', 'Python'],
-    image: '/images/project-retail-lens.png',
-  },
-  {
-    id: 4,
-    name: 'GENAI Asthma Prediction Tool',
-    company: 'Accenture',
-    period: "Aug'21 - Mar'25",
-    description: 'GENAI asthma prediction tool with RAG and LLM chat functionality.',
-    highlights: [
-      'Developed a GENAI asthma prediction tool with RAG and LLM chat functionality integrated with Excel/CSV',
-      'Led front-end (Streamlit) and back-end development, contributing to two project phases and client demos',
-    ],
-    techStack: ['RAG', 'LLM', 'Streamlit', 'Excel/CSV Integration'],
-    image: '/images/project-asthma.png',
-  },
-  {
-    id: 5,
-    name: 'Fee-Optimizing Model',
-    company: 'Accenture',
-    period: "Aug'21 - Mar'25",
-    description: 'Fee-optimizing model for plasma donations using customer segmentation.',
-    highlights: [
-      'Engineered a fee-optimizing model for plasma donations using segmentation and profiling of customer data',
-      'Utilized automated web scraping for data collection, enhancing the effectiveness of the pricing strategy',
-    ],
-    techStack: ['Python', 'Web Scraping', 'Segmentation', 'Profiling'],
-    image: '/images/project-fee-optimize.png',
-  },
-  {
-    id: 6,
-    name: 'Credit Risk Model',
-    company: 'Kaleidofin',
-    period: "Dec'19 - Aug'21",
-    description: 'Credit risk model for scoring new-to-credit and MFI customers.',
-    highlights: [
-      'Developed a credit risk model using Bagging and Boosting to score new-to-credit and MFI customers',
-      'Conducted monthly risk analyses for continuous improvements in code base performance',
-    ],
-    techStack: ['Bagging', 'Boosting', 'Python', 'Risk Analysis'],
-    image: '/images/project-credit-risk.png',
-  },
-  {
-    id: 7,
-    name: 'Payment Prediction Model',
-    company: 'Kaleidofin',
-    period: "Dec'19 - Aug'21",
-    description: 'Payment prediction model for call center operations optimization.',
-    highlights: [
-      'Built a payment prediction model using RandomForest, LightGBM, and GridSearchCV for hyperparameter tuning',
-      'Improved efficiency and optimization of in-house call center operations by accurately predicting customer payments',
-    ],
-    techStack: ['RandomForest', 'LightGBM', 'GridSearchCV', 'Python'],
-    image: '/images/project-payment-predict.png',
-  },
-  {
-    id: 8,
-    name: 'Two Stage Flight Prediction',
-    company: 'Kaleidofin',
-    period: "Dec'19 - Aug'21",
-    description: 'Built a two-stage ML engine to forecast on-time performance of US flights using weather data.',
-    highlights: [
-      'Built a two-stage ML engine to forecast on-time performance of US flights using weather data.',
-      'First stage performs binary classification for delay prediction, second stage uses regression to predict delay duration in minutes',
-    ],
-    techStack: ['Python', 'Machine Learning', 'Classification', 'Regression'],
-    image: '/images/project-flight-delay.png',
-  },
-];
+import SectionHeader from './SectionHeader';
+import { projects } from '../data/projects';
 
 export default function Projects() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -161,36 +43,37 @@ export default function Projects() {
     setCurrentIndex((prev) => (prev - 1 + projects.length) % projects.length);
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') prevSlide();
+      if (e.key === 'ArrowRight') nextSlide();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
   return (
     <div className="flex flex-col gap-[40px]">
       {/* Section Header */}
       <div className="container flex items-center justify-between">
-        <div className="flex flex-col gap-[8px]">
-          <span className="text-[11px] tracking-[0.08em] text-black/35 uppercase font-semibold">
-            💻 Projects
-          </span>
-          <h2 className="text-[40px] leading-[116%] tracking-[-0.02em] font-semibold">
-            Featured Work
-          </h2>
-        </div>
-        
+        <SectionHeader eyebrow="💻 Projects" title="Featured Work" />
+
         {/* Navigation Arrows */}
         <div className="flex items-center gap-[12px]">
-          <button 
+          <button
             onClick={prevSlide}
-            className="w-[40px] h-[40px] rounded-full bg-[#f7f7f7] dark:bg-[#1a1a1a] flex items-center justify-center hover:bg-[#ebebeb] dark:hover:bg-[#252525] text-black dark:text-white transition-all duration-200"
-            style={{ border: '1px solid rgba(0,0,0,0.04)' }}
+            className="w-[40px] h-[40px] rounded-full bg-[#f7f7f7] dark:bg-[#1a1a1a] flex items-center justify-center hover:bg-[#ebebeb] dark:hover:bg-[#252525] text-black dark:text-white transition-all duration-200 subtle-border"
           >
             ←
           </button>
-          <button 
+          <button
             onClick={nextSlide}
-            className="w-[40px] h-[40px] rounded-full bg-[#f7f7f7] dark:bg-[#1a1a1a] flex items-center justify-center hover:bg-[#ebebeb] dark:hover:bg-[#252525] text-black dark:text-white transition-all duration-200"
-            style={{ border: '1px solid rgba(0,0,0,0.04)' }}
+            className="w-[40px] h-[40px] rounded-full bg-[#f7f7f7] dark:bg-[#1a1a1a] flex items-center justify-center hover:bg-[#ebebeb] dark:hover:bg-[#252525] text-black dark:text-white transition-all duration-200 subtle-border"
           >
             →
           </button>
-          <a 
+          <a
             href="https://github.com/ramanathanmurugappan"
             target="_blank"
             rel="noopener noreferrer"
@@ -202,11 +85,17 @@ export default function Projects() {
       </div>
 
       {/* Project Card */}
-      <div className="container">
-        <div 
-          className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] overflow-hidden"
-          style={{ border: '1px solid rgba(0,0,0,0.04)' }}
+      <div className="container relative">
+        {/* Large Side Arrow — Prev */}
+        <button
+          onClick={prevSlide}
+          aria-label="Previous project"
+          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-[44px] h-[44px] rounded-full bg-white/90 dark:bg-[#111]/90 backdrop-blur-sm shadow-md flex items-center justify-center text-[22px] text-black dark:text-white hover:bg-[#1e6ef4] hover:text-white transition-all duration-200 subtle-border"
         >
+          ‹
+        </button>
+
+        <div className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] overflow-hidden card-hover">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentIndex}
@@ -222,19 +111,13 @@ export default function Projects() {
               <div className="w-full md:w-[50%] p-[36px] flex flex-col justify-between gap-[24px]">
                 {/* Company Badge */}
                 <div className="flex items-center gap-[8px]">
-                  <div 
-                    className="inline-flex px-[14px] py-[8px] rounded-[12px] bg-white dark:bg-[#0f0f0f] text-[12px] font-semibold"
-                    style={{ border: '1px solid rgba(0,0,0,0.04)' }}
-                  >
+                  <div className="inline-flex px-[14px] py-[8px] rounded-[12px] bg-white dark:bg-[#0f0f0f] text-[12px] font-semibold text-black dark:text-white subtle-border">
                     🏢 {projects[currentIndex].company}
                   </div>
-                  <div 
-                    className="inline-flex px-[10px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[10px] font-semibold text-black/50 dark:text-white/50"
-                    style={{ border: '1px solid rgba(0,0,0,0.04)' }}
-                  >
+                  <div className="inline-flex px-[10px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[10px] font-semibold text-black/50 dark:text-white/50 subtle-border">
                     {projects[currentIndex].period}
                   </div>
-                    <span className="text-[12px] text-black/35 dark:text-white/35 font-semibold">
+                  <span className="text-[12px] text-black/35 dark:text-white/35 font-semibold">
                     {currentIndex + 1} / {projects.length}
                   </span>
                 </div>
@@ -247,7 +130,7 @@ export default function Projects() {
                   <p className="text-[13px] leading-[150%] text-black/50 dark:text-white/50 font-semibold">
                     {projects[currentIndex].description}
                   </p>
-                  
+
                   {/* Highlights */}
                   <ul className="flex flex-col gap-[8px] mt-[8px]">
                     {projects[currentIndex].highlights.map((highlight, idx) => (
@@ -261,10 +144,9 @@ export default function Projects() {
                   {/* Tech Stack */}
                   <div className="flex flex-wrap gap-[8px] mt-[8px]">
                     {projects[currentIndex].techStack.map((tech) => (
-                      <span 
+                      <span
                         key={tech}
-                        className="px-[10px] py-[5px] rounded-[8px] bg-white dark:bg-[#0f0f0f] text-[11px] font-semibold text-black/60 dark:text-white/60"
-                        style={{ border: '1px solid rgba(0,0,0,0.04)' }}
+                        className="px-[10px] py-[5px] rounded-[8px] bg-white dark:bg-[#0f0f0f] text-[11px] font-semibold text-black/60 dark:text-white/60 subtle-border"
                       >
                         {tech}
                       </span>
@@ -275,7 +157,7 @@ export default function Projects() {
 
               {/* Right Side - Project Image */}
               <div className="w-full md:w-[50%] relative min-h-[380px]">
-                <img 
+                <img
                   src={projects[currentIndex].image}
                   alt={projects[currentIndex].name}
                   className="w-full h-full object-cover"
@@ -285,6 +167,15 @@ export default function Projects() {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Large Side Arrow — Next */}
+        <button
+          onClick={nextSlide}
+          aria-label="Next project"
+          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-[44px] h-[44px] rounded-full bg-white/90 dark:bg-[#111]/90 backdrop-blur-sm shadow-md flex items-center justify-center text-[22px] text-black dark:text-white hover:bg-[#1e6ef4] hover:text-white transition-all duration-200 subtle-border"
+        >
+          ›
+        </button>
       </div>
 
       {/* Slider Dots */}

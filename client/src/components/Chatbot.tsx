@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import OpenAI from 'openai';
+import { PROFILE_CONTEXT, GROQ_MODELS } from '../lib/profileContext';
 
 interface Message {
   id: string;
@@ -12,45 +13,6 @@ interface ChatbotProps {
   isOpen?: boolean;
   onToggle?: (isOpen: boolean) => void;
 }
-
-const PROFILE_CONTEXT = `You ARE Ramanathan Murugappan. Speak as him always — first person only (I/my/me). Never admit to being AI/bot/assistant. If asked, deflect: "I'm Ramanathan! What would you like to know?" Answer in 1-2 lines unless detail is requested. If something isn't in your profile: "Feel free to email me at ramanathanmurugappan29@gmail.com"
-
-Ramanathan Murugappan | Bengaluru, India | ramanathanmurugappan29@gmail.com | +91 99 444 66 701
-ram96.com | linkedin.com/in/ramanathan-murugappan-66a068125 | github.com/ramanathanmurugappan | scholar.google.com/citations?user=YsEC2aEAAAAJ
-
-GenAI Architect & AI/ML Research Engineer | 6+ yrs | Finance, Pharma, Retail, HR, Microfinance
-
-EDUCATION:
-- GrowthX Product & Growth Fellowship (Mar 2024–Mar 2025): strategy, monetization, growth, retention
-- M.E. Mechatronics — Anna University/M.I.T Chennai (2018–2020): Robotics, ML, Embedded Systems, Drones
-- B.E. Mechanical — Agni College of Technology, Chennai (2013–2017): AutoCAD, CNC, G-Code
-- HSC (CS) — S.R.V Matric (2011–2013): C, C++
-
-WORK:
-1. AI/ML Research Engineer R&D — ITC Infotech (Mar 2025–Present): HR RAG over 700+ docs (Docling), multi-vector hybrid search (OpenSearch), Agentic RAG (Open WebUI), evals (DeepEval/LangSmith/Langfuse), ServiceNow multi-agent system w/ MCP
-2. Accenture (Aug 2021–May 2025, 3y10m) — Decision Analyst → Analytics Analyst → Data Science Analyst: Retail Lens visual search (SAM+CLIP+Qdrant), GenAI asthma RAG tool (Streamlit), plasma donation pricing model
-3. Kaleidofin (Dec 2019–Aug 2021, Chennai): Credit risk (Bagging/Boosting for MFI), payment prediction (RF/LightGBM), Airflow pipelines
-4. Solarillion Foundation (Aug 2018–Jul 2020, Chennai): Research Assistant, Teaching Assistant, Research Intern — 2 papers (IEEE & FICC)
-5. Teknuance Info Solutions (May–Aug 2018, Chennai): R&D Intern
-
-PUBLICATIONS:
-1. "Two-Stage ML for Movie Lifetime Prediction" — FICC 2020, San Francisco (Springer AISC); outperformed multiplex's existing system
-2. "User-Independent Human Stress Detection" — IEEE IS'20, Bulgaria; 95% bi-affective, 85% tri-affective, 83% multi-affective accuracy
-
-AWARDS: GrowthX Winner — scaled Blue Tokai Coffee ₹250Cr→₹500Cr in 12 months; Capstone to 1,000+ professionals
-
-CERTIFICATIONS (13 total): Advanced Analytics for Data Scientists (Workera, Jun 2024), Responsible AI (Workera, Apr 2024), Red Hat OpenShift, Google GenAI, +9 more on LinkedIn
-
-LANGUAGES: English (full professional), Japanese (limited working), +1 more
-
-VOLUNTEERING: CARE AND WELFARE Organisation, Chennai — road safety & poverty relief
-
-GITHUB (10 repos at github.com/ramanathanmurugappan):
-portfolio-websites (React+TS+Vite, AI chatbot+voice) | Agents (AI agent building, Python) | websearch_bot (Streamlit+Gemini web search) | resume-chatbot (Flask+GenAI, Docker, Vercel) | prediction-of-on-time-performance-of-flights (2-stage ML: delay classification+regression) | MovieLifetimePrediction (FICC 2020 paper) | User-Independent-Human-Stress-Detection (IEEE IS'20 paper) | Big-Mart-Sales-Prediction-analyticsvidhya | chatgpt-sensitive-data-blocker | full_stack_course
-
-SKILLS: LLMs, GenAI, Python, AWS, ML, BERT, ETL, SQL, Applied Research
-
-TECH: LangChain/LangGraph/LiteLLM/CrewAI/AutoGen/HuggingFace/vLLM/Ollama | MCP/ReAct/A2A/Multi-Agent | Hybrid RAG/Docling/OpenSearch | DeepEval/Langfuse/RAGAs/LangSmith/W&B | Qdrant/Pinecone/Weaviate/FAISS/ChromaDB/Elasticsearch | Python/SQL/Spark/Dask/Pandas/Kafka/Airflow | FastAPI/Flask/React/Streamlit/Gradio | Docker/Podman/OpenShift/MLflow/Git | AWS(Bedrock/Lambda/EC2/S3)/GCP(Vertex AI)/Azure OpenAI`;
 
 export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotProps = {}) {
   const [messages, setMessages] = useState<Message[]>([
@@ -121,15 +83,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         baseURL: 'https://api.groq.com/openai/v1',
         dangerouslyAllowBrowser: true,
       });
-      // Fallback model chain — tried in order when rate limits are hit
-      const MODELS = [
-        'llama-3.3-70b-versatile',        // Best quality (active)
-        'llama-3.1-8b-instant',           // Fast, high TPM (active)
-        'qwen/qwen3-32b',                 // Qwen 32B (active)
-        'llama-3.3-70b-specdec',          // Speculative decoding 70B (active)
-        'moonshotai/kimi-k2-instruct-0905', // Moonshot fallback (active)
-      ];
-
       chatRef.current = {
         history: [] as { role: string; content: string }[],
         sendMessage: async (message: string) => {
@@ -140,7 +93,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
           ];
 
           let lastError: any;
-          for (const model of MODELS) {
+          for (const model of GROQ_MODELS) {
             try {
               const completion = await openaiRef.current!.chat.completions.create({
                 messages: allMessages,
@@ -555,7 +508,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-50 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-3 rounded-[20px] bg-white dark:bg-[#1a1a1a] shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden flex flex-col h-[400px] md:h-[500px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)]">
+        <div className="mb-3 rounded-[20px] bg-white dark:bg-[#1a1a1a] shadow-2xl dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)] border border-black/10 dark:border-white/10 overflow-hidden flex flex-col h-[400px] md:h-[500px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)]">
           {/* Header */}
           <div className="bg-gradient-to-r from-[#1e6ef4] to-[#1a5ecf] px-4 md:px-6 py-3 md:py-4 text-white flex items-center justify-between">
             <div>
@@ -628,9 +581,9 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                   <div className="flex justify-start">
                     <div className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 rounded-[16px] rounded-bl-[4px] px-3 md:px-4 py-2">
                       <div className="flex gap-1">
-                        <div className="w-2 h-2 rounded-full bg-black/40 animate-bounce"></div>
-                        <div className="w-2 h-2 rounded-full bg-black/40 animate-bounce [animation-delay:0.2s]"></div>
-                        <div className="w-2 h-2 rounded-full bg-black/40 animate-bounce [animation-delay:0.4s]"></div>
+                        <div className="w-2 h-2 rounded-full bg-black/40 dark:bg-white/40 animate-bounce"></div>
+                        <div className="w-2 h-2 rounded-full bg-black/40 dark:bg-white/40 animate-bounce [animation-delay:0.2s]"></div>
+                        <div className="w-2 h-2 rounded-full bg-black/40 dark:bg-white/40 animate-bounce [animation-delay:0.4s]"></div>
                       </div>
                     </div>
                   </div>

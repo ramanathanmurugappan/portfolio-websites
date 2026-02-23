@@ -3,16 +3,15 @@
  * Features: Multi-column layout with avatar, menu, social, and explore links
  */
 
+import { socialLinks } from '../data/socialLinks';
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
     <footer className="mt-[80px] pb-[100px]">
       <div className="container">
-        <div 
-          className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px]"
-          style={{ border: '1px solid rgba(0,0,0,0.04)' }}
-        >
+        <div className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] subtle-border">
           {/* Footer Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-[40px]">
             {/* Brand Column */}
@@ -59,31 +58,17 @@ export default function Footer() {
                 Connect
               </span>
               <nav className="flex flex-col gap-[10px]">
-                <a 
-                  href="https://www.linkedin.com/in/ramanathan-murugappan-66a068125/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-[13px] font-semibold footer-link text-black dark:text-white hover:text-[#1e6ef4] transition-colors duration-200 w-fit"
-                >
-                  LinkedIn
-                </a>
-                <a 
-                  href="https://github.com/ramanathanmurugappan" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-[13px] font-semibold footer-link text-black dark:text-white hover:text-[#1e6ef4] transition-colors duration-200 w-fit"
-                >
-                  GitHub
-                </a>
-                <a 
-                  href="https://scholar.google.com/citations?user=YsEC2aEAAAAJ" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-[13px] font-semibold footer-link text-black dark:text-white hover:text-[#1e6ef4] transition-colors duration-200 w-fit"
-                >
-                  Google Scholar
-                </a>
-
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[13px] font-semibold footer-link text-black dark:text-white hover:text-[#1e6ef4] transition-colors duration-200 w-fit"
+                  >
+                    {link.label}
+                  </a>
+                ))}
               </nav>
             </div>
 
@@ -122,10 +107,7 @@ export default function Footer() {
           </div>
 
           {/* Footer Bottom */}
-          <div 
-            className="flex flex-col md:flex-row items-center justify-between gap-[14px] mt-[40px] pt-[20px]"
-            style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}
-          >
+          <div className="flex flex-col md:flex-row items-center justify-between gap-[14px] mt-[40px] pt-[20px] border-t border-black/[0.06] dark:border-white/[0.06]">
             <span className="text-[11px] text-black/35 dark:text-white/35 font-semibold">
               © {currentYear}, Ramanathan Murugappan
             </span>

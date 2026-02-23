@@ -4,39 +4,25 @@
  */
 
 import Marquee from './Marquee';
-
-// Stats badges for the first marquee row - Ramanathan's stats
-const statsBadges = [
-  { emoji: '🚀', text: '6+ Years Experience', variant: 'yellow' as const },
-  { emoji: '🤖', text: 'AI/ML Engineer', variant: 'mint' as const },
-  { emoji: '🏢', text: '3+ Companies', variant: 'fog' as const },
-  { emoji: '📄', text: '2 Publications', variant: 'blue' as const },
-  { emoji: '🎯', text: 'Enterprise AI', variant: 'yellow' as const },
-];
-
-// Skills badges for the second marquee row - Ramanathan's skills
-const skillsBadges = [
-  { emoji: '🦜', text: 'Gen AI Architect', variant: 'orchid' as const },
-  { emoji: '🔗', text: 'LangChain', variant: 'sage' as const },
-  { emoji: '🤖', text: 'Multi-Agent Systems', variant: 'beige' as const },
-  { emoji: '📊', text: 'Data Scientist', variant: 'pink' as const },
-  { emoji: '☁️', text: 'Cloud & MLOps', variant: 'blue' as const },
-];
+import { statsBadges, skillsBadges } from '../data/hero';
 
 export default function Hero() {
   return (
     <div className="flex flex-col pt-[100px]">
       <div className="flex flex-col gap-[100px] relative">
         {/* Hero Offer - Avatar and Headline */}
-        <div className="container flex flex-col items-center text-center gap-[32px]">
+        <div
+          className="container flex flex-col items-center text-center gap-[32px]"
+          style={{
+            background: 'radial-gradient(ellipse 600px 400px at 50% 0%, rgba(30,110,244,0.06) 0%, transparent 70%)',
+          }}
+        >
           {/* Avatar with Status Indicator */}
           <div className="relative inline-block animate-fade-in">
-            <div 
-              className="w-[100px] h-[100px] rounded-[28px] flex items-center justify-center overflow-hidden"
-              style={{ 
-                backgroundColor: '#E8E0F0',
-                border: '1px solid rgba(0,0,0,0.04)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            <div
+              className="w-[100px] h-[100px] rounded-[28px] flex items-center justify-center overflow-hidden bg-[#E8E0F0] dark:bg-[#2D1F45] subtle-border"
+              style={{
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 0 0 4px rgba(30,110,244,0.08)',
               }}
             >
               <img 
@@ -68,18 +54,26 @@ export default function Hero() {
         {/* Marquee Section */}
         <div className="flex flex-col gap-[20px] relative overflow-hidden animate-fade-in delay-400">
           {/* Left Gradient Overlay */}
-          <div 
+          <div
             className="absolute left-0 top-0 bottom-0 w-[300px] z-10 pointer-events-none"
-            style={{ 
-              background: 'linear-gradient(90deg, white 0%, transparent 100%)' 
+            style={{
+              background: 'linear-gradient(90deg, var(--white) 0%, transparent 100%)',
+              backdropFilter: 'blur(1px)',
+              WebkitBackdropFilter: 'blur(1px)',
+              maskImage: 'linear-gradient(90deg, black 60%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(90deg, black 60%, transparent 100%)',
             }}
           />
-          
+
           {/* Right Gradient Overlay */}
-          <div 
+          <div
             className="absolute right-0 top-0 bottom-0 w-[300px] z-10 pointer-events-none"
-            style={{ 
-              background: 'linear-gradient(270deg, white 0%, transparent 100%)' 
+            style={{
+              background: 'linear-gradient(270deg, var(--white) 0%, transparent 100%)',
+              backdropFilter: 'blur(1px)',
+              WebkitBackdropFilter: 'blur(1px)',
+              maskImage: 'linear-gradient(270deg, black 60%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(270deg, black 60%, transparent 100%)',
             }}
           />
 

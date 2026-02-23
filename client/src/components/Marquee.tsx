@@ -15,15 +15,15 @@ interface MarqueeProps {
 }
 
 const variantStyles: Record<Badge['variant'], { bg: string; text: string }> = {
-  yellow: { bg: '#fff0c6', text: '#845200' },
-  beige: { bg: '#fde2d5', text: '#71391e' },
-  blue: { bg: '#e4edf6', text: '#5a6570' },
-  mint: { bg: '#d8f0dc', text: '#33683c' },
-  fog: { bg: '#e9e9ea', text: '#5e5e5f' },
-  orchid: { bg: '#f2ddf5', text: '#65326c' },
-  indigo: { bg: '#e1e6fb', text: '#425088' },
-  sage: { bg: '#dff0d9', text: '#406733' },
-  pink: { bg: '#f6e0e0', text: '#854040' },
+  yellow: { bg: 'var(--badge-yellow-bg)', text: 'var(--badge-yellow-text)' },
+  beige: { bg: 'var(--badge-beige-bg)', text: 'var(--badge-beige-text)' },
+  blue: { bg: 'var(--badge-blue-bg)', text: 'var(--badge-blue-text)' },
+  mint: { bg: 'var(--badge-mint-bg)', text: 'var(--badge-mint-text)' },
+  fog: { bg: 'var(--badge-fog-bg)', text: 'var(--badge-fog-text)' },
+  orchid: { bg: 'var(--badge-orchid-bg)', text: 'var(--badge-orchid-text)' },
+  indigo: { bg: 'var(--badge-indigo-bg)', text: 'var(--badge-indigo-text)' },
+  sage: { bg: 'var(--badge-sage-bg)', text: 'var(--badge-sage-text)' },
+  pink: { bg: 'var(--badge-pink-bg)', text: 'var(--badge-pink-text)' },
 };
 
 function BadgePill({ emoji, text, variant }: Badge) {

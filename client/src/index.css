@@ -362,6 +362,14 @@
   background: rgba(0, 0, 0, 0.3);
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 
 /* Fade In Animation */
 @keyframes fade-in {
@@ -434,12 +442,53 @@
 
 /* Card Hover Effects */
 .card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  border: 1px solid var(--black-opacity-4);
 }
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(30, 110, 244, 0.06);
+  border-color: rgba(30, 110, 244, 0.12);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(30, 110, 244, 0.2), 0 0 20px rgba(30, 110, 244, 0.07);
+  border-color: rgba(30, 110, 244, 0.2);
+}
+
+/* Subtle Border Utility — auto dark-mode via CSS variables */
+.subtle-border {
+  border: 1px solid var(--black-opacity-4);
+}
+
+/* Accent Glow Utility */
+.accent-glow {
+  box-shadow: 0 0 20px rgba(30, 110, 244, 0.15);
+}
+
+/* Gradient Text Utility */
+.gradient-text {
+  background: linear-gradient(135deg, #1e6ef4, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scroll-triggered Reveal Animation */
+@keyframes reveal-up {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-reveal-up {
+  animation: reveal-up 0.6s ease-out forwards;
 }
 
 /* Button Hover Effects */
@@ -540,14 +589,23 @@
   background-color: #ebebeb;
 }
 
+.dark .tech-icon:hover {
+  background-color: #252525;
+}
+
 /* Achievement Card Hover */
 .achievement-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .achievement-card:hover {
   transform: scale(1.01);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.dark .achievement-card:hover {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(30, 110, 244, 0.15);
+  border-color: rgba(30, 110, 244, 0.15);
 }
 
 /* Footer Link Underline Animation */
