@@ -42,10 +42,10 @@ export default function Hero() {
 
           {/* Headline */}
           <div className="flex flex-col gap-[4px] animate-fade-in-up delay-200">
-            <h1 className="text-[48px] leading-[116%] tracking-[-0.03em] font-semibold">
+            <h1 className="text-[clamp(32px,5vw,48px)] leading-[116%] tracking-[-0.03em] font-semibold">
               Hi, I'm Ramanathan 👋
             </h1>
-            <p className="text-[48px] leading-[116%] tracking-[-0.03em] font-semibold text-black/35 dark:text-white/35">
+            <p className="text-[clamp(32px,5vw,48px)] leading-[116%] tracking-[-0.03em] font-semibold animate-gradient-text">
               I build enterprise-grade AI products
             </p>
           </div>

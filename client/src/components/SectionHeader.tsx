@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+
 interface SectionHeaderProps {
   eyebrow: string;   // e.g. "🛠️ Tech Stack"
   title: string;     // e.g. "What I Use"
@@ -6,13 +8,19 @@ interface SectionHeaderProps {
 
 export default function SectionHeader({ eyebrow, title, centered }: SectionHeaderProps) {
   return (
-    <div className={`flex flex-col gap-[8px] ${centered ? 'items-center text-center' : ''}`}>
+    <motion.div
+      className={`flex flex-col gap-[8px] ${centered ? 'items-center text-center' : ''}`}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5 }}
+    >
       <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
         {eyebrow}
       </span>
-      <h2 className="text-[40px] leading-[116%] tracking-[-0.02em] font-semibold">
+      <h2 className="text-[clamp(28px,4vw,40px)] leading-[116%] tracking-[-0.02em] font-semibold">
         {title}
       </h2>
-    </div>
+    </motion.div>
   );
 }

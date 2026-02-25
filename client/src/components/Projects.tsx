@@ -178,15 +178,14 @@ export default function Projects() {
         </button>
       </div>
 
-      {/* Slider Dots */}
-      <div className="container flex justify-center gap-[8px]">
+      {/* Slider Dots — pill-shaped active indicator */}
+      <div className="container flex justify-center items-center gap-[6px]">
         {projects.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-[8px] h-[8px] rounded-full transition-all duration-300 ${
-              index === currentIndex ? 'bg-black dark:bg-white scale-125' : 'bg-black/15 dark:bg-white/15 hover:bg-black/30 dark:hover:bg-white/30'
-            }`}
+            aria-label={`Go to project ${index + 1}`}
+            className={`slide-dot ${index === currentIndex ? 'slide-dot--active' : 'w-[6px]'}`}
           />
         ))}
       </div>

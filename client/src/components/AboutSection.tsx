@@ -1,7 +1,10 @@
 /**
  * AboutSection Component - Bento-grid style about cards
  * Features: Multi-card layout with intro, location, experience, and focus areas
+ * Modernized: Framer Motion whileInView stagger reveals
  */
+
+import { motion } from 'framer-motion';
 
 export default function AboutSection() {
   return (
@@ -10,7 +13,13 @@ export default function AboutSection() {
       <div className="grid grid-cols-1 md:grid-cols-10 gap-[16px]">
 
         {/* Intro Card - Large Left */}
-        <div className="md:col-span-6 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] flex flex-col justify-between min-h-[420px] card-hover">
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.55, delay: 0 }}
+          className="md:col-span-6 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] flex flex-col justify-between min-h-[420px] card-hover"
+        >
           <h2 className="text-[32px] leading-[120%] tracking-[-0.02em] font-semibold max-w-[380px]">
             <span className="text-black dark:text-white">Gen AI Architect 🏗️</span>{' '}
             <span className="text-black/35 dark:text-white/35">building robust, end-to-end, enterprise-grade AI products</span>
@@ -22,22 +31,34 @@ export default function AboutSection() {
               className="w-[260px] h-auto object-contain img-transition"
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* Right Column - Stacked Cards */}
         <div className="md:col-span-4 flex flex-col gap-[16px]">
           {/* Location Card */}
-          <div className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex-1 card-hover">
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.55, delay: 0.08 }}
+            className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex-1 card-hover"
+          >
             <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
               📍 Based In
             </span>
             <h3 className="text-[22px] leading-[120%] tracking-[-0.02em] font-semibold mt-[8px] text-black dark:text-white">
               Bengaluru, India
             </h3>
-          </div>
+          </motion.div>
 
           {/* Experience Card */}
-          <div className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex-[2] card-hover">
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.55, delay: 0.16 }}
+            className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex-[2] card-hover"
+          >
             <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
               💼 Experience Since
             </span>
@@ -64,11 +85,17 @@ class GenAIArchitect:
     self.role = "AI/ML Lead"`}
               </pre>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Bottom Row - Two Cards */}
-        <div className="md:col-span-5 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col justify-between min-h-[180px] card-hover">
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.55, delay: 0.24 }}
+          className="md:col-span-5 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col justify-between min-h-[180px] card-hover"
+        >
           <span className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[11px] tracking-[0.02em] font-semibold w-fit subtle-border">
             🛠️ What I Do
           </span>
@@ -76,9 +103,15 @@ class GenAIArchitect:
             <span className="text-black dark:text-white">Multi-Agent Systems, RAG Pipelines,</span>{' '}
             <span className="text-black/35 dark:text-white/35">and ML Modeling</span>
           </h3>
-        </div>
+        </motion.div>
 
-        <div className="md:col-span-5 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col justify-between min-h-[180px] card-hover relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.55, delay: 0.32 }}
+          className="md:col-span-5 rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col justify-between min-h-[180px] card-hover relative overflow-hidden"
+        >
           <span className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[11px] tracking-[0.02em] font-semibold w-fit subtle-border">
             🏢 Currently At
           </span>
@@ -95,7 +128,7 @@ class GenAIArchitect:
               className="w-[110px] h-auto object-contain"
             />
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

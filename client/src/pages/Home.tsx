@@ -16,6 +16,7 @@ import Education from '@/components/Education';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
 import Chatbot from '@/components/Chatbot';
+import ScrollProgress from '@/components/ScrollProgress';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('home');
@@ -44,6 +45,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
+      {/* Awwwards-style modernization layers */}
+      <ScrollProgress />
+      {/* Film grain texture overlay for depth */}
+      <div className="grain-overlay" aria-hidden="true" />
+
       {/* Theme Toggle Button */}
       <ThemeToggle />
 

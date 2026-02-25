@@ -1,8 +1,10 @@
 /**
  * Achievements Component - Stats and accomplishments showcase
  * Features: Stacked cards with avatar characters and achievements
+ * Modernized: Framer Motion whileInView stagger reveals
  */
 
+import { motion } from 'framer-motion';
 import SectionHeader from './SectionHeader';
 import { achievements, publications } from '../data/achievements';
 
@@ -13,9 +15,13 @@ export default function Achievements() {
 
       {/* Achievement Cards */}
       <div className="flex flex-col gap-[14px]">
-        {achievements.map((achievement) => (
-          <div
+        {achievements.map((achievement, idx) => (
+          <motion.div
             key={achievement.title}
+            initial={{ opacity: 0, x: idx % 2 === 0 ? -24 : 24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.55, ease: 'easeOut', delay: idx * 0.07 }}
             className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] flex items-center justify-between min-h-[160px] relative overflow-hidden achievement-card subtle-border"
           >
             {/* Avatar on Left */}
@@ -75,7 +81,7 @@ export default function Achievements() {
                 />
               </div>
             )}
-          </div>
+          </motion.div>
         ))}
       </div>
 
@@ -86,11 +92,15 @@ export default function Achievements() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">
           {publications.map((pub, index) => (
-            <a
+            <motion.a
               key={index}
               href={pub.link}
               target="_blank"
               rel="noopener noreferrer"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, ease: 'easeOut', delay: index * 0.1 }}
               className="rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col gap-[12px] card-hover group"
             >
               <span className="text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
@@ -105,7 +115,7 @@ export default function Achievements() {
               <span className="text-[11px] text-[#1e6ef4] font-semibold mt-auto">
                 Read Paper →
               </span>
-            </a>
+            </motion.a>
           ))}
         </div>
       </div>

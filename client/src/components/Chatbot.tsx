@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import OpenAI from 'openai';
 import { PROFILE_CONTEXT, GROQ_MODELS } from '../lib/profileContext';
 
@@ -261,8 +262,11 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }));
         const audio = new Audio(url);
         audioRef.current = audio;
-        audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; resolve(interruptedRef.current ? 'interrupted' : 'completed'); };
-        audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; resolve(interruptedRef.current ? 'interrupted' : 'completed'); };
+        const cleanup = () => { URL.revokeObjectURL(url); audioRef.current = null; };
+        audio.onended = () => { cleanup(); resolve(interruptedRef.current ? 'interrupted' : 'completed'); };
+        audio.onerror = () => { cleanup(); resolve('completed'); };
+        // Resolve immediately when paused externally (stopConversation taps pause)
+        audio.onpause = () => { if (!audio.ended) { cleanup(); resolve('interrupted'); } };
         await audio.play();
       } catch {
         resolve('completed');
@@ -310,9 +314,9 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
 
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Float32Array(bufferLength);
-      const SILENCE_THRESHOLD = 0.015;
-      const SILENCE_DURATION = 1500; // stop after 1.5s of silence post-speech
-      const MAX_DURATION = 10000;    // 10s hard cap
+      const SILENCE_THRESHOLD = 0.012; // low enough for quiet mics
+      const SILENCE_DURATION = 1500;   // stop after 1.5s of silence post-speech
+      const MAX_DURATION = 15000;      // 15s hard cap if user never stops talking
       const startTime = Date.now();
       let speechStarted = false;
       let silenceStart = 0;
@@ -346,14 +350,19 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         if (chunks.length === 0) { resolve(null); return; }
         const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
         try {
-          const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY;
-          const res = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&language=en&smart_format=true', {
+          // Use Groq Whisper for STT (free tier, same API key as chat)
+          const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+          const formData = new FormData();
+          formData.append('file', new File([blob], 'audio.webm', { type: mimeType || 'audio/webm' }));
+          formData.append('model', 'whisper-large-v3-turbo');
+          formData.append('language', 'en');
+          const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
             method: 'POST',
-            headers: { 'Authorization': `Token ${apiKey}`, 'Content-Type': mimeType || 'audio/webm' },
-            body: blob,
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+            body: formData,
           });
           const data = await res.json();
-          const transcript = data.results?.channels[0]?.alternatives[0]?.transcript?.trim() || null;
+          const transcript = data.text?.trim() || null;
           resolve(transcript);
         } catch {
           resolve(null);
@@ -367,93 +376,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     });
   }, []);
 
-  // Continuous voice conversation loop
-  const runConversationLoop = useCallback(async () => {
-    conversationActiveRef.current = true;
-
-    const SILENCE_TIMEOUT_MS = 120_000; // 2 minutes
-    let lastSpeechAt = Date.now();
-
-    while (conversationActiveRef.current) {
-      // 1. Listen
-      const transcript = await listenOnce();
-
-      if (!conversationActiveRef.current) break;
-
-      if (!transcript || !transcript.trim()) {
-        // No speech detected — stop if silent for 120s
-        if (Date.now() - lastSpeechAt >= SILENCE_TIMEOUT_MS) {
-          setLastBotResponse("Stopped listening — no input for 2 minutes. Tap the mic to start again.");
-          stopConversation();
-          break;
-        }
-        continue;
-      }
-
-      lastSpeechAt = Date.now(); // reset on each spoken input
-
-      if (!chatRef.current) break;
-
-      // 2. Think
-      setVoiceStatus('thinking');
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: transcript.trim(),
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMessage]);
-
-      try {
-        const result = await chatRef.current.sendMessage(transcript.trim());
-        const responseText = result.response.text();
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'bot',
-          content: responseText,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, botMessage]);
-        setLastBotResponse(responseText);
-
-        if (!conversationActiveRef.current) break;
-
-        // 3. Speak
-        setVoiceStatus('speaking');
-        await speakText(responseText);
-
-        if (!conversationActiveRef.current) break;
-
-        // 4. Loop back to listening
-      } catch (error: any) {
-        const status = error?.status ?? error?.response?.status;
-        let friendlyMsg: string;
-        if (status === 429 || error?.message?.toLowerCase().includes('rate limit')) {
-          friendlyMsg = "I've hit my API rate limit for now. Please try again in a few minutes — or come back tomorrow. Sorry for the inconvenience!";
-        } else if (status === 401 || error?.message?.toLowerCase().includes('api key')) {
-          friendlyMsg = "There's an API key configuration issue. Please contact me at ramanathanmurugappan29@gmail.com.";
-        } else if (error?.message?.toLowerCase().includes('network') || error?.message?.toLowerCase().includes('fetch')) {
-          friendlyMsg = "Network error — please check your internet connection and try again.";
-        } else {
-          friendlyMsg = `Something went wrong: ${error?.message || 'Unknown error'}. Please try again later.`;
-        }
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'bot',
-          content: friendlyMsg,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-        setLastBotResponse(friendlyMsg);
-        // Continue the loop — don't break on errors
-      }
-    }
-
-    setVoiceStatus('idle');
-    setIsListening(false);
-  }, [listenOnce, speakText]);
-
-  // Stop the conversation loop
+  // Stop the conversation / recording immediately
   const stopConversation = useCallback(() => {
     conversationActiveRef.current = false;
     if (recorderRef.current) {
@@ -465,6 +388,77 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     setIsListening(false);
     setVoiceStatus('idle');
   }, []);
+
+  // Single-shot voice exchange: listen → think → speak → idle
+  // User taps the mic button to start each exchange.
+  const runConversationLoop = useCallback(async () => {
+    conversationActiveRef.current = true;
+
+    // 1. Listen (stops automatically on silence or 6s pre-speech timeout)
+    const transcript = await listenOnce();
+
+    if (!conversationActiveRef.current) { setVoiceStatus('idle'); setIsListening(false); return; }
+
+    if (!transcript || !transcript.trim()) {
+      // Nothing heard — return to idle silently
+      stopConversation();
+      return;
+    }
+
+    if (!chatRef.current) { stopConversation(); return; }
+
+    // 2. Think
+    setVoiceStatus('thinking');
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: transcript.trim(),
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      const result = await chatRef.current.sendMessage(transcript.trim());
+      const responseText = result.response.text();
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'bot',
+        content: responseText,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, botMessage]);
+      setLastBotResponse(responseText);
+
+      if (!conversationActiveRef.current) { stopConversation(); return; }
+
+      // 3. Speak
+      setVoiceStatus('speaking');
+      await speakText(responseText);
+    } catch (error: any) {
+      const status = error?.status ?? error?.response?.status;
+      let friendlyMsg: string;
+      if (status === 429 || error?.message?.toLowerCase().includes('rate limit')) {
+        friendlyMsg = "I've hit my API rate limit for now. Please try again in a few minutes — or come back tomorrow. Sorry for the inconvenience!";
+      } else if (status === 401 || error?.message?.toLowerCase().includes('api key')) {
+        friendlyMsg = "There's an API key configuration issue. Please contact me at ramanathanmurugappan29@gmail.com.";
+      } else if (error?.message?.toLowerCase().includes('network') || error?.message?.toLowerCase().includes('fetch')) {
+        friendlyMsg = "Network error — please check your internet connection and try again.";
+      } else {
+        friendlyMsg = `Something went wrong: ${error?.message || 'Unknown error'}. Please try again later.`;
+      }
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'bot',
+        content: friendlyMsg,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      setLastBotResponse(friendlyMsg);
+    }
+
+    // Always return to idle after each exchange — user taps to start again
+    stopConversation();
+  }, [listenOnce, speakText, stopConversation]);
 
   // Toggle voice conversation on/off
   const toggleListening = useCallback(() => {
@@ -483,23 +477,42 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     }
   }, [runConversationLoop, stopConversation]);
 
-  // Cleanup recognition on unmount
+  // Cleanup recognition + conversation on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
+      stopConversation();
     };
-  }, []);
+  }, [stopConversation]);
 
-  // Stop conversation when switching away from voice mode
+  // Stop everything when chat is closed
+  useEffect(() => {
+    if (!isOpen) {
+      stopConversation();
+      if (dictationRef.current) {
+        try { dictationRef.current.stop(); } catch { /* ignore */ }
+        setIsDictating(false);
+      }
+    }
+  }, [isOpen, stopConversation]);
+
+  // Stop conversation when switching away from voice mode;
+  // stop dictation when switching TO voice mode
   useEffect(() => {
     if (chatMode !== 'voice') {
       stopConversation();
+    } else {
+      // switching to voice — kill any active text dictation
+      if (dictationRef.current) {
+        try { dictationRef.current.stop(); } catch { /* ignore */ }
+        setIsDictating(false);
+      }
     }
   }, [chatMode, stopConversation]);
 
   const voiceStatusText = {
-    idle: 'Tap to start conversation',
-    listening: 'Listening...',
+    idle: 'Tap mic to speak',
+    listening: 'Listening... (speak now)',
     thinking: 'Thinking...',
     speaking: 'Speaking... (tap to stop)',
   };
@@ -508,180 +521,218 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-50 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-3 rounded-[20px] bg-white dark:bg-[#1a1a1a] shadow-2xl dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)] border border-black/10 dark:border-white/10 overflow-hidden flex flex-col h-[400px] md:h-[500px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)]">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-[#1e6ef4] to-[#1a5ecf] px-4 md:px-6 py-3 md:py-4 text-white flex items-center justify-between">
-            <div>
-              <h3 className="text-[14px] md:text-[16px] font-semibold">Ramanathan's AI</h3>
-              <div className="flex gap-1 mt-1">
+        <div className="mb-3 rounded-[24px] overflow-hidden flex flex-col h-[460px] md:h-[520px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)] bg-white dark:bg-[#111] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_64px_-12px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)]">
+
+          {/* ── Header — premium dark panel ── */}
+          <div className="relative px-4 py-[10px] flex items-center justify-between bg-gradient-to-r from-[#0c1425] via-[#162040] to-[#0c1425] flex-shrink-0">
+            {/* Gradient accent line at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#1e6ef4] to-transparent opacity-50" />
+
+            {/* Avatar + title */}
+            <div className="flex items-center gap-[10px]">
+              <div className="relative flex-shrink-0">
+                <div className="w-[34px] h-[34px] rounded-[10px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] flex items-center justify-center text-white text-[13px] font-bold shadow-[0_0_12px_rgba(30,110,244,0.45)]">
+                  R
+                </div>
+                <div className="absolute -bottom-[2px] -right-[2px] w-[9px] h-[9px] rounded-full bg-[#35c759] border-[2px] border-[#0c1425]" />
+              </div>
+              <div>
+                <h3 className="text-[13px] font-semibold text-white leading-none">Ramanathan's AI</h3>
+                <p className="text-[10px] text-white/35 mt-[3px]">Always online</p>
+              </div>
+            </div>
+
+            {/* Tabs + close */}
+            <div className="flex items-center gap-[6px]">
+              <div className="flex items-center bg-white/[0.07] rounded-[8px] p-[2px]">
                 <button
                   onClick={() => setChatMode('text')}
-                  className={`text-[10px] md:text-[11px] px-2 py-0.5 rounded-full transition-all ${
-                    chatMode === 'text'
-                      ? 'bg-white/25 text-white font-semibold'
-                      : 'text-white/60 hover:text-white/80'
+                  className={`text-[10px] px-[10px] py-[4px] rounded-[6px] font-semibold transition-all duration-200 ${
+                    chatMode === 'text' ? 'bg-[#1e6ef4] text-white' : 'text-white/45 hover:text-white/70'
                   }`}
                 >
                   Chat
                 </button>
                 <button
                   onClick={() => setChatMode('voice')}
-                  className={`text-[10px] md:text-[11px] px-2 py-0.5 rounded-full transition-all ${
-                    chatMode === 'voice'
-                      ? 'bg-white/25 text-white font-semibold'
-                      : 'text-white/60 hover:text-white/80'
+                  className={`text-[10px] px-[10px] py-[4px] rounded-[6px] font-semibold transition-all duration-200 ${
+                    chatMode === 'voice' ? 'bg-[#1e6ef4] text-white' : 'text-white/45 hover:text-white/70'
                   }`}
                 >
                   Voice
                 </button>
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center text-white/35 hover:text-white hover:bg-white/10 transition-all duration-200 text-[18px] leading-none"
+              >
+                ×
+              </button>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/20 rounded-full w-[28px] h-[28px] flex items-center justify-center transition-all flex-shrink-0"
-            >
-              ×
-            </button>
           </div>
 
           {chatMode === 'text' ? (
             <>
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 bg-[#f9f9f9] dark:bg-[#0f0f0f]">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`flex items-end gap-1 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                      <div
-                        className={`rounded-[16px] px-3 md:px-4 py-2 text-[12px] md:text-[13px] leading-[150%] ${
-                          msg.role === 'user'
-                            ? 'bg-[#1e6ef4] text-white rounded-br-[4px]'
-                            : 'bg-white dark:bg-[#1a1a1a] text-black/80 dark:text-white/80 border border-black/10 dark:border-white/10 rounded-bl-[4px]'
-                        }`}
-                      >
-                        {msg.content}
-                      </div>
-                      {msg.role === 'bot' && (
-                        <button
-                          onClick={() => handleSpeak(msg.content, msg.id)}
-                          className={`flex-shrink-0 w-[22px] h-[22px] flex items-center justify-center rounded-full text-[11px] transition-all hover:bg-black/10 dark:hover:bg-white/10 ${
-                            speakingMessageId === msg.id ? 'animate-pulse bg-[#1e6ef4]/20' : ''
+              {/* ── Messages ── */}
+              <div className="flex-1 overflow-y-auto chat-messages p-3 space-y-[10px] bg-[#f6f6f7] dark:bg-[#0a0a0a]">
+                <AnimatePresence initial={false}>
+                  {messages.map((msg) => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.22 }}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`flex items-end gap-[6px] max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                        {/* Bot mini-avatar */}
+                        {msg.role === 'bot' && (
+                          <div className="w-[20px] h-[20px] rounded-[6px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 mb-[2px]">
+                            R
+                          </div>
+                        )}
+                        <div
+                          className={`rounded-[14px] px-[12px] py-[8px] text-[12px] md:text-[13px] leading-[155%] ${
+                            msg.role === 'user'
+                              ? 'bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white rounded-br-[4px]'
+                              : 'bg-white dark:bg-[#1c1c1e] text-black/85 dark:text-white/85 border-l-2 border-[#1e6ef4] rounded-bl-[4px] shadow-sm dark:shadow-none'
                           }`}
-                          title={speakingMessageId === msg.id ? 'Stop speaking' : 'Read aloud'}
                         >
-                          {speakingMessageId === msg.id ? '🔊' : '🔈'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                          {msg.content}
+                        </div>
+                        {msg.role === 'bot' && (
+                          <button
+                            onClick={() => handleSpeak(msg.content, msg.id)}
+                            className={`flex-shrink-0 w-[20px] h-[20px] flex items-center justify-center rounded-full text-[10px] transition-all hover:bg-black/10 dark:hover:bg-white/10 mb-[2px] ${
+                              speakingMessageId === msg.id ? 'text-[#1e6ef4] animate-pulse' : 'text-black/25 dark:text-white/25'
+                            }`}
+                            title={speakingMessageId === msg.id ? 'Stop speaking' : 'Read aloud'}
+                          >
+                            {speakingMessageId === msg.id ? '🔊' : '🔈'}
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* ── Wave-bar typing indicator ── */}
                 {loading && (
-                  <div className="flex justify-start">
-                    <div className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 rounded-[16px] rounded-bl-[4px] px-3 md:px-4 py-2">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 rounded-full bg-black/40 dark:bg-white/40 animate-bounce"></div>
-                        <div className="w-2 h-2 rounded-full bg-black/40 dark:bg-white/40 animate-bounce [animation-delay:0.2s]"></div>
-                        <div className="w-2 h-2 rounded-full bg-black/40 dark:bg-white/40 animate-bounce [animation-delay:0.4s]"></div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex justify-start"
+                  >
+                    <div className="flex items-end gap-[6px]">
+                      <div className="w-[20px] h-[20px] rounded-[6px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0">
+                        R
+                      </div>
+                      <div className="bg-white dark:bg-[#1c1c1e] rounded-[14px] rounded-bl-[4px] border-l-2 border-[#1e6ef4] px-[12px] py-[10px] shadow-sm flex items-end gap-[3px]">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className="w-[3px] rounded-full bg-[#1e6ef4]"
+                            style={{ animation: 'wave-bar 1s ease-in-out infinite', animationDelay: `${i * 0.12}s` }}
+                          />
+                        ))}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
-              <form onSubmit={handleSendMessage} className="border-t border-black/10 dark:border-white/10 p-2 md:p-3 bg-white dark:bg-[#1a1a1a]">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask me anything..."
-                    className="flex-1 px-2 md:px-3 py-2 rounded-[12px] border border-black/10 dark:border-white/10 text-[11px] md:text-[12px] placeholder-black/40 dark:placeholder-white/40 focus:outline-none focus:border-[#1e6ef4] transition-all bg-white dark:bg-[#0f0f0f] text-black dark:text-white"
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={toggleDictation}
-                    disabled={loading}
-                    className={`w-[34px] h-[34px] rounded-[12px] flex items-center justify-center transition-all flex-shrink-0 ${
-                      isDictating
-                        ? 'bg-red-500 text-white animate-pulse'
-                        : 'bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 hover:bg-black/10 dark:hover:bg-white/20'
-                    } disabled:opacity-50`}
-                    title={isDictating ? 'Stop listening' : 'Speak to type'}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                      <line x1="12" y1="19" x2="12" y2="23"/>
-                      <line x1="8" y1="23" x2="16" y2="23"/>
-                    </svg>
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading || !input.trim()}
-                    className="px-2 md:px-3 py-2 rounded-[12px] bg-[#1e6ef4] text-white text-[11px] md:text-[12px] font-semibold hover:bg-[#1a5ecf] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                  >
-                    Send
-                  </button>
-                </div>
-              </form>
+              {/* ── Input area ── */}
+              <div className="border-t border-black/[0.05] dark:border-white/[0.05] px-3 py-[10px] bg-white dark:bg-[#111] flex-shrink-0">
+                <form onSubmit={handleSendMessage}>
+                  <div className="relative bg-[#f4f4f5] dark:bg-[#1c1c1e] rounded-[14px] ring-1 ring-black/[0.06] dark:ring-white/[0.05] focus-within:ring-[#1e6ef4]/50 transition-all duration-200">
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Ask me anything..."
+                      className="w-full bg-transparent text-[12px] md:text-[13px] placeholder-black/30 dark:placeholder-white/25 focus:outline-none text-black dark:text-white pl-[12px] pr-[74px] py-[9px] rounded-[14px]"
+                      disabled={loading}
+                    />
+                    {/* Buttons — absolutely positioned so they never squeeze the input */}
+                    <div className="absolute right-[8px] top-1/2 -translate-y-1/2 flex items-center gap-[4px]">
+                      {/* Mic */}
+                      <button
+                        type="button"
+                        onClick={toggleDictation}
+                        disabled={loading}
+                        className={`w-[28px] h-[28px] rounded-[8px] flex items-center justify-center transition-all duration-200 ${
+                          isDictating
+                            ? 'bg-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                            : 'text-black/30 dark:text-white/30 hover:text-[#1e6ef4] hover:bg-[#1e6ef4]/10'
+                        } disabled:opacity-40`}
+                        title={isDictating ? 'Stop listening' : 'Speak to type'}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                          <line x1="12" y1="19" x2="12" y2="23"/>
+                          <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                      </button>
+                      {/* Send */}
+                      <button
+                        type="submit"
+                        disabled={loading || !input.trim()}
+                        className="w-[28px] h-[28px] rounded-[8px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white flex items-center justify-center transition-all duration-200 hover:opacity-90 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:scale-100 disabled:hover:opacity-30"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="22" y1="2" x2="11" y2="13"/>
+                          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
             </>
           ) : (
-            /* Voice Mode UI */
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#f9f9f9] dark:bg-[#0f0f0f] p-4">
-              {/* Mic Button with pulse ring */}
-              <div className="relative mb-6">
-                {/* Pulse rings when listening */}
-                {voiceStatus === 'listening' && (
+            /* ── Voice Mode ── */
+            <div className="flex-1 flex flex-col items-center justify-center bg-[#f6f6f7] dark:bg-[#0a0a0a] p-6 gap-5">
+              <div className="relative">
+                {(voiceStatus === 'listening' || voiceStatus === 'speaking') && (
                   <>
-                    <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" style={{ animationDuration: '1.5s' }} />
-                    <div className="absolute -inset-3 rounded-full bg-red-500/10 animate-ping" style={{ animationDuration: '2s' }} />
-                  </>
-                )}
-                {/* Pulse rings when speaking */}
-                {voiceStatus === 'speaking' && (
-                  <>
-                    <div className="absolute inset-0 rounded-full bg-[#1e6ef4]/20 animate-ping" style={{ animationDuration: '1.5s' }} />
-                    <div className="absolute -inset-3 rounded-full bg-[#1e6ef4]/10 animate-ping" style={{ animationDuration: '2s' }} />
+                    <div className={`absolute -inset-6 rounded-full animate-ping opacity-20 ${voiceStatus === 'listening' ? 'bg-red-500' : 'bg-[#1e6ef4]'}`} style={{ animationDuration: '2s' }} />
+                    <div className={`absolute -inset-3 rounded-full animate-ping opacity-30 ${voiceStatus === 'listening' ? 'bg-red-500' : 'bg-[#1e6ef4]'}`} style={{ animationDuration: '1.5s' }} />
                   </>
                 )}
                 <button
                   onClick={toggleListening}
-                  className={`relative z-10 w-[80px] h-[80px] rounded-full flex items-center justify-center text-[32px] transition-all duration-300 shadow-lg ${
+                  className={`relative z-10 w-[80px] h-[80px] rounded-full flex items-center justify-center transition-all duration-300 ${
                     voiceStatus === 'listening'
-                      ? 'bg-red-500 text-white scale-110'
+                      ? 'bg-red-500 text-white scale-110 shadow-[0_0_32px_rgba(239,68,68,0.5)]'
                       : voiceStatus === 'thinking'
-                      ? 'bg-amber-500 text-white'
-                      : voiceStatus === 'speaking'
-                      ? 'bg-[#1e6ef4] text-white hover:bg-red-500'
-                      : 'bg-[#1e6ef4] text-white hover:bg-[#1a5ecf] hover:scale-105 active:scale-95'
+                      ? 'bg-amber-500 text-white shadow-[0_0_32px_rgba(245,158,11,0.4)]'
+                      : 'bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white hover:scale-105 active:scale-95 shadow-[0_0_28px_rgba(30,110,244,0.4)]'
                   }`}
                 >
                   {voiceStatus === 'listening' ? (
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                       <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                       <line x1="12" y1="19" x2="12" y2="23"/>
                       <line x1="8" y1="23" x2="16" y2="23"/>
                     </svg>
                   ) : voiceStatus === 'thinking' ? (
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 rounded-full bg-white animate-bounce"></div>
-                      <div className="w-2 h-2 rounded-full bg-white animate-bounce [animation-delay:0.2s]"></div>
-                      <div className="w-2 h-2 rounded-full bg-white animate-bounce [animation-delay:0.4s]"></div>
+                    <div className="flex items-end gap-[3px]">
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <div key={i} className="w-[3px] rounded-full bg-white" style={{ animation: 'wave-bar 1s ease-in-out infinite', animationDelay: `${i * 0.12}s` }} />
+                      ))}
                     </div>
                   ) : voiceStatus === 'speaking' ? (
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
                       <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
                       <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
                     </svg>
                   ) : (
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                       <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                       <line x1="12" y1="19" x2="12" y2="23"/>
@@ -691,21 +742,18 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                 </button>
               </div>
 
-              {/* Status Text */}
-              <p className={`text-[13px] md:text-[14px] font-medium mb-4 ${
-                voiceStatus === 'listening'
-                  ? 'text-red-500'
-                  : voiceStatus === 'speaking'
-                  ? 'text-[#1e6ef4]'
-                  : 'text-black/50 dark:text-white/50'
+              <p className={`text-[12px] font-semibold tracking-wide uppercase ${
+                voiceStatus === 'listening' ? 'text-red-500'
+                : voiceStatus === 'speaking' ? 'text-[#1e6ef4]'
+                : voiceStatus === 'thinking' ? 'text-amber-500'
+                : 'text-black/35 dark:text-white/35'
               }`}>
                 {voiceStatusText[voiceStatus]}
               </p>
 
-              {/* Last bot response */}
               {lastBotResponse && (
-                <div className="w-full max-h-[140px] overflow-y-auto px-3">
-                  <p className="text-[11px] md:text-[12px] text-black/60 dark:text-white/60 text-center leading-[160%]">
+                <div className="w-full bg-white dark:bg-[#1c1c1e] rounded-[16px] p-[14px] border-l-2 border-[#1e6ef4] shadow-sm">
+                  <p className="text-[11px] md:text-[12px] text-black/60 dark:text-white/60 leading-[165%]">
                     {lastBotResponse}
                   </p>
                 </div>
@@ -715,15 +763,11 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         </div>
       )}
 
-      {/* Toggle Button - Only show if not controlled by Navigation */}
+      {/* Toggle Button */}
       {!onToggle && (
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-[56px] h-[56px] rounded-full flex items-center justify-center font-bold text-[24px] shadow-lg hover:scale-110 transition-all duration-200 active:scale-95 ${
-            isOpen
-              ? 'bg-[#1e6ef4] text-white'
-              : 'bg-[#1e6ef4] text-white hover:bg-[#1a5ecf]'
-          }`}
+          className="w-[52px] h-[52px] rounded-full bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white flex items-center justify-center text-[22px] shadow-[0_8px_24px_rgba(30,110,244,0.4)] hover:scale-110 transition-all duration-200 active:scale-95"
         >
           {isOpen ? '↓' : '💬'}
         </button>
