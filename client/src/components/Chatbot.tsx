@@ -8,6 +8,7 @@ interface Message {
   role: 'user' | 'bot';
   content: string;
   timestamp: Date;
+  isEasterEgg?: boolean;
 }
 
 interface ChatbotProps {
@@ -15,15 +16,44 @@ interface ChatbotProps {
   onToggle?: (isOpen: boolean) => void;
 }
 
+const WELCOME_MESSAGE: Message = {
+  id: '1',
+  role: 'bot',
+  content: "Hi! I'm Ramanathan. Ask me anything about my experience, skills, or projects!",
+  timestamp: new Date(),
+};
+
+const SUGGESTED_QUESTIONS = [
+  "What's your tech stack?",
+  'Tell me about your projects',
+  'Are you open to work?',
+];
+
+const HIRE_KEYWORDS = ['hire me', 'hire you', 'want to hire', 'looking to hire', 'you hired'];
+
+const EASTER_EGG_RESPONSE =
+  "🎉 YES! I'm ready to join your team! Let's make something amazing together. Email me at ramanathanmurugappan29@gmail.com 🚀";
+
+const CONFETTI_COLORS = ['#1e6ef4', '#4f46e5', '#f59e0b', '#10b981', '#ef4444'];
+
+function loadHistory(): Message[] {
+  try {
+    const saved = localStorage.getItem('chat_history');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.slice(-20).map((m: Message) => ({
+          ...m,
+          timestamp: new Date(m.timestamp),
+        }));
+      }
+    }
+  } catch { /* ignore */ }
+  return [WELCOME_MESSAGE];
+}
+
 export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotProps = {}) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'bot',
-      content: "Hi! I'm Ramanathan. Ask me anything about my experience, skills, or projects!",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(loadHistory);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [internalIsOpen, setInternalIsOpen] = useState(true);
@@ -37,8 +67,14 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const recognitionRef = useRef<any>(null);
   const recorderRef = useRef<{ recorder: MediaRecorder; stream: MediaStream } | null>(null);
   const conversationActiveRef = useRef(false);
-  
-  // Use external state if provided, otherwise use internal state
+
+  // Typing reveal state
+  const [displayContents, setDisplayContents] = useState<Record<string, string>>({});
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Easter egg confetti state
+  const [confettiId, setConfettiId] = useState<string | null>(null);
+
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const setIsOpen = (value: boolean) => {
     if (onToggle) {
@@ -47,11 +83,41 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setInternalIsOpen(value);
     }
   };
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const openaiRef = useRef<OpenAI | null>(null);
   const chatRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Persist chat history (capped at 20 messages)
+  useEffect(() => {
+    if (messages.length > 0) {
+      const toSave = messages.slice(-20);
+      localStorage.setItem('chat_history', JSON.stringify(toSave));
+    }
+  }, [messages]);
+
+  // Cleanup typing interval on unmount
+  useEffect(() => {
+    return () => {
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+    };
+  }, []);
+
+  // Reveal message character by character
+  const revealMessage = useCallback((id: string, content: string) => {
+    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+    setDisplayContents((prev) => ({ ...prev, [id]: '' }));
+    let i = 0;
+    typingIntervalRef.current = setInterval(() => {
+      i++;
+      setDisplayContents((prev) => ({ ...prev, [id]: content.slice(0, i) }));
+      if (i >= content.length) {
+        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
+    }, 25);
+  }, []);
 
   // VoiceRSS TTS — Indian English male voice, returns audio ArrayBuffer
   const elevenLabsTTS = async (text: string): Promise<ArrayBuffer> => {
@@ -78,7 +144,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       if (!apiKey) {
         throw new Error('Groq API key not found. Please set VITE_GROQ_API_KEY in .env.local');
       }
-      // Use OpenAI SDK with Groq's base URL
       openaiRef.current = new OpenAI({
         apiKey: apiKey,
         baseURL: 'https://api.groq.com/openai/v1',
@@ -100,7 +165,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                 messages: allMessages,
                 model,
                 temperature: 0.7,
-                max_tokens: 300,  // Keep short — bot gives 1-2 line answers; 4096 burns TPM fast
+                max_tokens: 300,
                 top_p: 1,
                 stream: false,
               });
@@ -112,10 +177,10 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               return { response: { text: () => assistantMessage } };
             } catch (err: any) {
               lastError = err;
-              continue; // Any error — silently try next model
+              continue;
             }
           }
-          throw lastError; // All models exhausted
+          throw lastError;
         },
       };
     } catch (error) {
@@ -129,9 +194,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, displayContents]);
 
-  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -142,17 +206,13 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   }, []);
 
   const handleSpeak = async (text: string, messageId: string) => {
-    // If already speaking this message, stop it
     if (speakingMessageId === messageId) {
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
       setSpeakingMessageId(null);
       return;
     }
-
-    // Stop any ongoing audio
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     setSpeakingMessageId(messageId);
-
     try {
       const buffer = await elevenLabsTTS(text);
       const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }));
@@ -166,27 +226,40 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || !chatRef.current) return;
-
-    // Store the input value before clearing it
-    const currentInput = input.trim();
+  // Core send logic, shared between input submit and chip click
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim() || !chatRef.current) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: currentInput,
+      content: text,
       timestamp: new Date(),
     };
-
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
     setLoading(true);
 
+    // Easter egg check
+    const isHire = HIRE_KEYWORDS.some((kw) => text.toLowerCase().includes(kw));
+    if (isHire) {
+      const eggId = (Date.now() + 1).toString();
+      const eggMessage: Message = {
+        id: eggId,
+        role: 'bot',
+        content: EASTER_EGG_RESPONSE,
+        timestamp: new Date(),
+        isEasterEgg: true,
+      };
+      setMessages((prev) => [...prev, eggMessage]);
+      setConfettiId(eggId);
+      revealMessage(eggId, EASTER_EGG_RESPONSE);
+      setTimeout(() => setConfettiId(null), 2000);
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Use the stored input value instead of the state variable
-      const result = await chatRef.current.sendMessage(currentInput);
+      const result = await chatRef.current.sendMessage(text);
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
@@ -194,8 +267,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
+      revealMessage(botMessage.id, botMessage.content);
     } catch (error: any) {
-      console.error('Error sending message:', error);
       const status = error?.status ?? error?.response?.status;
       let friendlyMsg: string;
       if (status === 429 || error?.message?.toLowerCase().includes('rate limit')) {
@@ -214,10 +287,34 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
+      revealMessage(errorMessage.id, friendlyMsg);
     } finally {
       setLoading(false);
     }
+  }, [revealMessage]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    const text = input.trim();
+    setInput('');
+    await sendMessage(text);
   };
+
+  const handleChipClick = (question: string) => {
+    sendMessage(question);
+  };
+
+  const handleNewChat = useCallback(() => {
+    localStorage.removeItem('chat_history');
+    setMessages([{ ...WELCOME_MESSAGE, id: Date.now().toString(), timestamp: new Date() }]);
+    setDisplayContents({});
+    setInput('');
+    if (chatRef.current) chatRef.current.history = [];
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    setSpeakingMessageId(null);
+    if (typingIntervalRef.current) { clearInterval(typingIntervalRef.current); typingIntervalRef.current = null; }
+  }, []);
 
   // Speech-to-text for chat input (mic icon in text mode)
   const toggleDictation = useCallback(() => {
@@ -248,10 +345,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     try { recognition.start(); } catch { setIsDictating(false); }
   }, [isDictating]);
 
-  // Track whether speech was interrupted so we don't reset voiceStatus
   const interruptedRef = useRef(false);
 
-  // Speak text using Fish Audio cloned voice (reusable for voice mode auto-speak)
   const speakText = useCallback((text: string): Promise<'completed' | 'interrupted'> => {
     return new Promise(async (resolve) => {
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
@@ -265,7 +360,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         const cleanup = () => { URL.revokeObjectURL(url); audioRef.current = null; };
         audio.onended = () => { cleanup(); resolve(interruptedRef.current ? 'interrupted' : 'completed'); };
         audio.onerror = () => { cleanup(); resolve('completed'); };
-        // Resolve immediately when paused externally (stopConversation taps pause)
         audio.onpause = () => { if (!audio.ended) { cleanup(); resolve('interrupted'); } };
         await audio.play();
       } catch {
@@ -274,7 +368,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     });
   }, []);
 
-  // Listen for a single utterance using MediaRecorder + Deepgram (works in all browsers)
   const listenOnce = useCallback((): Promise<string | null> => {
     return new Promise(async (resolve) => {
       let stream: MediaStream;
@@ -297,7 +390,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         return;
       }
 
-      // Pick best supported mime type across Chrome/Firefox/Safari
       const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
         .find(t => MediaRecorder.isTypeSupported(t)) || '';
 
@@ -305,7 +397,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       const chunks: Blob[] = [];
       recorderRef.current = { recorder: mediaRecorder, stream };
 
-      // Silence detection via Web Audio API
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
@@ -314,9 +405,9 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
 
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Float32Array(bufferLength);
-      const SILENCE_THRESHOLD = 0.012; // low enough for quiet mics
-      const SILENCE_DURATION = 1500;   // stop after 1.5s of silence post-speech
-      const MAX_DURATION = 15000;      // 15s hard cap if user never stops talking
+      const SILENCE_THRESHOLD = 0.012;
+      const SILENCE_DURATION = 1500;
+      const MAX_DURATION = 15000;
       const startTime = Date.now();
       let speechStarted = false;
       let silenceStart = 0;
@@ -350,7 +441,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         if (chunks.length === 0) { resolve(null); return; }
         const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
         try {
-          // Use Groq Whisper for STT (free tier, same API key as chat)
           const apiKey = import.meta.env.VITE_GROQ_API_KEY;
           const formData = new FormData();
           formData.append('file', new File([blob], 'audio.webm', { type: mimeType || 'audio/webm' }));
@@ -376,7 +466,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     });
   }, []);
 
-  // Stop the conversation / recording immediately
   const stopConversation = useCallback(() => {
     conversationActiveRef.current = false;
     if (recorderRef.current) {
@@ -389,25 +478,14 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     setVoiceStatus('idle');
   }, []);
 
-  // Single-shot voice exchange: listen → think → speak → idle
-  // User taps the mic button to start each exchange.
   const runConversationLoop = useCallback(async () => {
     conversationActiveRef.current = true;
 
-    // 1. Listen (stops automatically on silence or 6s pre-speech timeout)
     const transcript = await listenOnce();
-
     if (!conversationActiveRef.current) { setVoiceStatus('idle'); setIsListening(false); return; }
-
-    if (!transcript || !transcript.trim()) {
-      // Nothing heard — return to idle silently
-      stopConversation();
-      return;
-    }
-
+    if (!transcript || !transcript.trim()) { stopConversation(); return; }
     if (!chatRef.current) { stopConversation(); return; }
 
-    // 2. Think
     setVoiceStatus('thinking');
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -431,7 +509,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
 
       if (!conversationActiveRef.current) { stopConversation(); return; }
 
-      // 3. Speak
       setVoiceStatus('speaking');
       await speakText(responseText);
     } catch (error: any) {
@@ -456,28 +533,21 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setLastBotResponse(friendlyMsg);
     }
 
-    // Always return to idle after each exchange — user taps to start again
     stopConversation();
   }, [listenOnce, speakText, stopConversation]);
 
-  // Toggle voice conversation on/off
   const toggleListening = useCallback(() => {
-    // Check secure context
     if (!window.isSecureContext) {
       setLastBotResponse('Voice mode requires HTTPS or localhost.');
       return;
     }
-
     if (conversationActiveRef.current) {
-      // Stop the conversation
       stopConversation();
     } else {
-      // Start the conversation loop
       runConversationLoop();
     }
   }, [runConversationLoop, stopConversation]);
 
-  // Cleanup recognition + conversation on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
@@ -485,7 +555,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     };
   }, [stopConversation]);
 
-  // Stop everything when chat is closed
   useEffect(() => {
     if (!isOpen) {
       stopConversation();
@@ -496,13 +565,10 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     }
   }, [isOpen, stopConversation]);
 
-  // Stop conversation when switching away from voice mode;
-  // stop dictation when switching TO voice mode
   useEffect(() => {
     if (chatMode !== 'voice') {
       stopConversation();
     } else {
-      // switching to voice — kill any active text dictation
       if (dictationRef.current) {
         try { dictationRef.current.stop(); } catch { /* ignore */ }
         setIsDictating(false);
@@ -517,18 +583,22 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     speaking: 'Speaking... (tap to stop)',
   };
 
+  // Get display text for a bot message (animated or full)
+  const getDisplayText = (msg: Message) => {
+    if (msg.role !== 'bot') return msg.content;
+    if (msg.id in displayContents) return displayContents[msg.id];
+    return msg.content;
+  };
+
   return (
     <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-50 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
       {/* Chat Window */}
       {isOpen && (
         <div className="mb-3 rounded-[24px] overflow-hidden flex flex-col h-[460px] md:h-[520px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)] bg-white dark:bg-[#111] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_64px_-12px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)]">
 
-          {/* ── Header — premium dark panel ── */}
+          {/* ── Header ── */}
           <div className="relative px-4 py-[10px] flex items-center justify-between bg-gradient-to-r from-[#0c1425] via-[#162040] to-[#0c1425] flex-shrink-0">
-            {/* Gradient accent line at bottom */}
             <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#1e6ef4] to-transparent opacity-50" />
-
-            {/* Avatar + title */}
             <div className="flex items-center gap-[10px]">
               <div className="relative flex-shrink-0">
                 <div className="w-[34px] h-[34px] rounded-[10px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] flex items-center justify-center text-white text-[13px] font-bold shadow-[0_0_12px_rgba(30,110,244,0.45)]">
@@ -541,8 +611,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                 <p className="text-[10px] text-white/35 mt-[3px]">Always online</p>
               </div>
             </div>
-
-            {/* Tabs + close */}
             <div className="flex items-center gap-[6px]">
               <div className="flex items-center bg-white/[0.07] rounded-[8px] p-[2px]">
                 <button
@@ -562,6 +630,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                   Voice
                 </button>
               </div>
+              {/* Close */}
               <button
                 onClick={() => setIsOpen(false)}
                 className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center text-white/35 hover:text-white hover:bg-white/10 transition-all duration-200 text-[18px] leading-none"
@@ -575,6 +644,23 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
             <>
               {/* ── Messages ── */}
               <div className="flex-1 overflow-y-auto chat-messages p-3 space-y-[10px] bg-[#f6f6f7] dark:bg-[#0a0a0a]">
+
+                {/* New conversation pill — shown when history exists */}
+                {messages.length > 1 && (
+                  <div className="flex justify-center pt-[2px] pb-[4px]">
+                    <button
+                      onClick={handleNewChat}
+                      className="flex items-center gap-[5px] px-[12px] py-[5px] rounded-full border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1c1c1e] text-[11px] font-semibold text-black/35 dark:text-white/35 hover:text-[#1e6ef4] hover:border-[#1e6ef4]/40 hover:bg-[#1e6ef4]/5 transition-all duration-200 shadow-sm"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                      </svg>
+                      New conversation
+                    </button>
+                  </div>
+                )}
+
                 <AnimatePresence initial={false}>
                   {messages.map((msg) => (
                     <motion.div
@@ -585,20 +671,38 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div className={`flex items-end gap-[6px] max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        {/* Bot mini-avatar */}
                         {msg.role === 'bot' && (
                           <div className="w-[20px] h-[20px] rounded-[6px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 mb-[2px]">
                             R
                           </div>
                         )}
-                        <div
-                          className={`rounded-[14px] px-[12px] py-[8px] text-[12px] md:text-[13px] leading-[155%] ${
-                            msg.role === 'user'
-                              ? 'bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white rounded-br-[4px]'
-                              : 'bg-white dark:bg-[#1c1c1e] text-black/85 dark:text-white/85 border-l-2 border-[#1e6ef4] rounded-bl-[4px] shadow-sm dark:shadow-none'
-                          }`}
-                        >
-                          {msg.content}
+                        <div className="relative">
+                          {/* Easter egg confetti burst */}
+                          {msg.isEasterEgg && confettiId === msg.id && (
+                            <div className="absolute -top-[20px] left-0 flex gap-[6px] pointer-events-none">
+                              {CONFETTI_COLORS.map((color, i) => (
+                                <motion.div
+                                  key={i}
+                                  initial={{ y: 0, x: 0, opacity: 1, scale: 0 }}
+                                  animate={{ y: -40, x: (i - 2) * 14, opacity: 0, scale: 1.5 }}
+                                  transition={{ duration: 0.8, delay: i * 0.06, ease: 'easeOut' }}
+                                  style={{ backgroundColor: color }}
+                                  className="w-[8px] h-[8px] rounded-full"
+                                />
+                              ))}
+                            </div>
+                          )}
+                          <div
+                            className={`rounded-[14px] px-[12px] py-[8px] text-[12px] md:text-[13px] leading-[155%] ${
+                              msg.role === 'user'
+                                ? 'bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white rounded-br-[4px]'
+                                : msg.isEasterEgg
+                                ? 'bg-gradient-to-br from-[#1e6ef4]/10 to-[#4f46e5]/10 text-black/85 dark:text-white/85 border-l-2 border-[#1e6ef4] rounded-bl-[4px] shadow-sm dark:shadow-none'
+                                : 'bg-white dark:bg-[#1c1c1e] text-black/85 dark:text-white/85 border-l-2 border-[#1e6ef4] rounded-bl-[4px] shadow-sm dark:shadow-none'
+                            }`}
+                          >
+                            {getDisplayText(msg)}
+                          </div>
                         </div>
                         {msg.role === 'bot' && (
                           <button
@@ -643,6 +747,21 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* ── Suggested question chips — shown only before first user message ── */}
+              {messages.length === 1 && !loading && (
+                <div className="px-3 pt-[6px] pb-[2px] flex flex-wrap gap-[6px] bg-[#f6f6f7] dark:bg-[#0a0a0a] flex-shrink-0">
+                  {SUGGESTED_QUESTIONS.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => handleChipClick(q)}
+                      className="px-[10px] py-[5px] rounded-full border border-[#1e6ef4]/30 text-[11px] font-semibold text-[#1e6ef4] hover:bg-[#1e6ef4]/10 transition-all duration-200 whitespace-nowrap"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* ── Input area ── */}
               <div className="border-t border-black/[0.05] dark:border-white/[0.05] px-3 py-[10px] bg-white dark:bg-[#111] flex-shrink-0">
                 <form onSubmit={handleSendMessage}>
@@ -655,7 +774,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                       className="w-full bg-transparent text-[12px] md:text-[13px] placeholder-black/30 dark:placeholder-white/25 focus:outline-none text-black dark:text-white pl-[12px] pr-[74px] py-[9px] rounded-[14px]"
                       disabled={loading}
                     />
-                    {/* Buttons — absolutely positioned so they never squeeze the input */}
                     <div className="absolute right-[8px] top-1/2 -translate-y-1/2 flex items-center gap-[4px]">
                       {/* Mic */}
                       <button

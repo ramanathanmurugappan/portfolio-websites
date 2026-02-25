@@ -3,10 +3,19 @@
  * Features: Multi-column layout with avatar, menu, social, and explore links
  */
 
+import { useState, useEffect } from 'react';
 import { socialLinks } from '../data/socialLinks';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [visitCount, setVisitCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('https://api.countapi.xyz/hit/ram96.com/visits')
+      .then((r) => r.json())
+      .then((data) => { if (data?.value) setVisitCount(data.value); })
+      .catch(() => {}); // hide on failure
+  }, []);
 
   return (
     <footer className="mt-[80px] pb-[100px]">
@@ -108,10 +117,17 @@ export default function Footer() {
 
           {/* Footer Bottom */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-[14px] mt-[40px] pt-[20px] border-t border-black/[0.06] dark:border-white/[0.06]">
-            <span className="text-[11px] text-black/35 dark:text-white/35 font-semibold">
-              © {currentYear}, Ramanathan Murugappan
-            </span>
-            <button 
+            <div className="flex items-center gap-[16px]">
+              <span className="text-[11px] text-black/35 dark:text-white/35 font-semibold">
+                © {currentYear}, Ramanathan Murugappan
+              </span>
+              {visitCount !== null && (
+                <span className="text-[11px] text-black/25 dark:text-white/25 font-semibold">
+                  ✦ {visitCount.toLocaleString()} visits
+                </span>
+              )}
+            </div>
+            <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="text-[11px] text-black/35 dark:text-white/35 font-semibold hover:text-black dark:hover:text-white transition-colors duration-200"
             >

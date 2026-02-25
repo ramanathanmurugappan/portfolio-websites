@@ -10,6 +10,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import Hero from '@/components/Hero';
 import AboutSection from '@/components/AboutSection';
 import Projects from '@/components/Projects';
+import Experience from '@/components/Experience';
 import TechStack from '@/components/TechStack';
 import Achievements from '@/components/Achievements';
 import Education from '@/components/Education';
@@ -63,6 +64,11 @@ export default function Home() {
         {/* About Section - Bento Grid */}
         <section id="about">
           <AboutSection />
+        </section>
+
+        {/* Experience Timeline */}
+        <section id="experience">
+          <Experience />
         </section>
 
         {/* Projects Section */}

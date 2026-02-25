@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SectionHeader from './SectionHeader';
+import MagneticButton from './MagneticButton';
 import { projects } from '../data/projects';
 
 export default function Projects() {
@@ -73,14 +74,16 @@ export default function Projects() {
           >
             →
           </button>
-          <a
-            href="https://github.com/ramanathanmurugappan"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-[24px] py-[14px] rounded-[14px] bg-[#1e6ef4] text-white text-[14px] font-semibold hover:bg-[#1a5ecf] transition-all duration-200 hover:-translate-y-0.5"
-          >
-            View GitHub
-          </a>
+          <MagneticButton>
+            <a
+              href="https://github.com/ramanathanmurugappan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-[24px] py-[14px] rounded-[14px] bg-[#1e6ef4] text-white text-[14px] font-semibold hover:bg-[#1a5ecf] transition-all duration-200 hover:-translate-y-0.5"
+            >
+              View GitHub
+            </a>
+          </MagneticButton>
         </div>
       </div>
 
@@ -161,6 +164,8 @@ export default function Projects() {
                   src={projects[currentIndex].image}
                   alt={projects[currentIndex].name}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                   style={{ pointerEvents: 'auto' }}
                 />
               </div>

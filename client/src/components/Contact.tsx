@@ -6,6 +6,7 @@
 
 import { motion } from 'framer-motion';
 import { socialLinks } from '../data/socialLinks';
+import MagneticButton from './MagneticButton';
 
 export default function Contact() {
   return (
@@ -88,15 +89,16 @@ export default function Contact() {
         transition={{ duration: 0.5, ease: 'easeOut', delay: 0.2 }}
       >
         {socialLinks.map((link) => (
-          <a
-            key={link.label}
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-[20px] py-[12px] rounded-[12px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-black/70 dark:text-white/70 text-[13px] font-semibold hover:text-[#1e6ef4] dark:hover:text-[#1e6ef4] transition-all duration-200 card-hover"
-          >
-            {link.label}
-          </a>
+          <MagneticButton key={link.label}>
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-[20px] py-[12px] rounded-[12px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-black/70 dark:text-white/70 text-[13px] font-semibold hover:text-[#1e6ef4] dark:hover:text-[#1e6ef4] transition-all duration-200 card-hover"
+            >
+              {link.label}
+            </a>
+          </MagneticButton>
         ))}
       </motion.div>
     </div>
