@@ -13,6 +13,11 @@ import { useCountUp } from '../hooks/useCountUp';
 const HEADLINE_WORDS = ["Hi,", "I'm", "Ramanathan", "👋"];
 const SUBLINE_WORDS = ["I", "build", "enterprise-grade", "AI", "products"];
 
+const SKELETON_DELAY_MS = 400;
+const AVATAR_PARALLAX_PX = -60;
+const HEADLINE_PARALLAX_PX = -40;
+const COUNTER_DURATION_MS = 1400;
+
 const STATS = [
   { value: 6, suffix: '+', label: 'Years Exp' },
   { value: 3, suffix: '+', label: 'Companies' },
@@ -21,7 +26,7 @@ const STATS = [
 ];
 
 function CounterStat({ value, suffix, label }: { value: number; suffix: string; label: string }) {
-  const { count, ref } = useCountUp(value, 1400);
+  const { count, ref } = useCountUp(value, COUNTER_DURATION_MS);
   return (
     <div ref={ref} className="flex flex-col items-center gap-[4px]">
       <span className="text-[28px] md:text-[32px] font-bold tracking-[-0.03em] text-black dark:text-white tabular-nums">
@@ -66,11 +71,11 @@ export default function Hero() {
     target: heroRef,
     offset: ['start start', 'end start'],
   });
-  const avatarY = useTransform(scrollYProgress, [0, 1], [0, -60]);
-  const headlineY = useTransform(scrollYProgress, [0, 1], [0, -40]);
+  const avatarY = useTransform(scrollYProgress, [0, 1], [0, AVATAR_PARALLAX_PX]);
+  const headlineY = useTransform(scrollYProgress, [0, 1], [0, HEADLINE_PARALLAX_PX]);
 
   useEffect(() => {
-    const t = setTimeout(() => setShowSkeleton(false), 400);
+    const t = setTimeout(() => setShowSkeleton(false), SKELETON_DELAY_MS);
     return () => clearTimeout(t);
   }, []);
 

@@ -8,10 +8,57 @@ import { motion } from 'framer-motion';
 import { socialLinks } from '../data/socialLinks';
 import MagneticButton from './MagneticButton';
 
+// ── ContactCard ──────────────────────────────────────────────────────────────
+
+interface ContactCardProps {
+  icon: string;
+  label: string;
+  value: string;
+  href?: string;
+  delay: number;
+}
+
+function ContactCard({ icon, label, value, href, delay }: ContactCardProps) {
+  const motionProps = {
+    initial: { opacity: 0, y: 24 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: '-40px' },
+    transition: { duration: 0.5, ease: 'easeOut' as const, delay },
+    className: 'group flex flex-col items-center gap-[6px] p-[28px] rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-center card-hover',
+  };
+
+  const inner = (
+    <>
+      <span className="text-[24px] mb-[4px]">{icon}</span>
+      <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
+        {label}
+      </span>
+      <span className={`text-[14px] font-semibold text-black dark:text-white break-all ${href ? 'group-hover:text-[#1e6ef4] transition-colors duration-200' : ''}`}>
+        {value}
+      </span>
+    </>
+  );
+
+  if (href) {
+    return <motion.a href={href} {...motionProps}>{inner}</motion.a>;
+  }
+  return <motion.div {...motionProps}>{inner}</motion.div>;
+}
+
+// ── Contact data ─────────────────────────────────────────────────────────────
+
+const CONTACT_CARDS: ContactCardProps[] = [
+  { icon: '📧', label: 'Email',    value: 'ramanathanmurugappan29@gmail.com', href: 'mailto:ramanathanmurugappan29@gmail.com', delay: 0 },
+  { icon: '📱', label: 'Phone',    value: '+91 99 444 66 701',                href: 'tel:+919944466701',                       delay: 0.07 },
+  { icon: '📍', label: 'Location', value: 'Bengaluru, India',                                                                  delay: 0.14 },
+];
+
+// ── Component ────────────────────────────────────────────────────────────────
+
 export default function Contact() {
   return (
     <div className="container flex flex-col gap-[40px]">
-      {/* Section Header - Centered */}
+      {/* Section Header */}
       <motion.div
         className="flex flex-col items-center text-center gap-[20px]"
         initial={{ opacity: 0, y: 20 }}
@@ -26,58 +73,9 @@ export default function Contact() {
 
       {/* Contact Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[14px]">
-        {/* Email Card */}
-        <motion.a
-          href="mailto:ramanathanmurugappan29@gmail.com"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.5, ease: 'easeOut', delay: 0 }}
-          className="group flex flex-col items-center gap-[6px] p-[28px] rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-center card-hover"
-        >
-          <span className="text-[24px] mb-[4px]">📧</span>
-          <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
-            Email
-          </span>
-          <span className="text-[14px] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200 break-all text-black dark:text-white">
-            ramanathanmurugappan29@gmail.com
-          </span>
-        </motion.a>
-
-        {/* Phone Card */}
-        <motion.a
-          href="tel:+919944466701"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.07 }}
-          className="group flex flex-col items-center gap-[6px] p-[28px] rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-center card-hover"
-        >
-          <span className="text-[24px] mb-[4px]">📱</span>
-          <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
-            Phone
-          </span>
-          <span className="text-[14px] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200 text-black dark:text-white">
-            +91 99 444 66 701
-          </span>
-        </motion.a>
-
-        {/* Location Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.14 }}
-          className="flex flex-col items-center gap-[6px] p-[28px] rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-center card-hover"
-        >
-          <span className="text-[24px] mb-[4px]">📍</span>
-          <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
-            Location
-          </span>
-          <span className="text-[14px] font-semibold text-black dark:text-white">
-            Bengaluru, India
-          </span>
-        </motion.div>
+        {CONTACT_CARDS.map((card) => (
+          <ContactCard key={card.label} {...card} />
+        ))}
       </div>
 
       {/* Social Links */}

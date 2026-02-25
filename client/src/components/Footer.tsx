@@ -11,10 +11,16 @@ export default function Footer() {
   const [visitCount, setVisitCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('https://api.countapi.xyz/hit/ram96.com/visits')
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    fetch('https://api.countapi.xyz/hit/ram96.com/visits', { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => { if (data?.value) setVisitCount(data.value); })
-      .catch(() => {}); // hide on failure
+      .catch(() => {}) // hide on failure or timeout
+      .finally(() => clearTimeout(timeout));
+
+    return () => controller.abort();
   }, []);
 
   return (

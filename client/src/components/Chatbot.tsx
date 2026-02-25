@@ -1,7 +1,18 @@
+/**
+ * Chatbot component — floating AI chat widget.
+ * Supports text mode (with suggested chips, typing reveal, easter egg, persistence)
+ * and voice mode (Deepgram STT → Groq LLM → VoiceRSS TTS).
+ */
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OpenAI from 'openai';
 import { PROFILE_CONTEXT, GROQ_MODELS } from '../lib/profileContext';
+import { uid, getErrorMessage } from '../lib/chatUtils';
+import VoiceMode from './VoiceMode';
+import type { VoiceStatus } from './VoiceMode';
+
+// ── Types ────────────────────────────────────────────────────────────────────
 
 interface Message {
   id: string;
@@ -16,8 +27,10 @@ interface ChatbotProps {
   onToggle?: (isOpen: boolean) => void;
 }
 
+// ── Constants ────────────────────────────────────────────────────────────────
+
 const WELCOME_MESSAGE: Message = {
-  id: '1',
+  id: 'welcome',
   role: 'bot',
   content: "Hi! I'm Ramanathan. Ask me anything about my experience, skills, or projects!",
   timestamp: new Date(),
@@ -36,21 +49,29 @@ const EASTER_EGG_RESPONSE =
 
 const CONFETTI_COLORS = ['#1e6ef4', '#4f46e5', '#f59e0b', '#10b981', '#ef4444'];
 
+const TYPING_SPEED_MS = 25;
+const CONFETTI_DURATION_MS = 2000;
+const HISTORY_CAP = 20;
+
+// ── Persistence helpers ──────────────────────────────────────────────────────
+
 function loadHistory(): Message[] {
   try {
     const saved = localStorage.getItem('chat_history');
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.slice(-20).map((m: Message) => ({
+        return parsed.slice(-HISTORY_CAP).map((m: Message) => ({
           ...m,
           timestamp: new Date(m.timestamp),
         }));
       }
     }
-  } catch { /* ignore */ }
+  } catch { /* ignore parse errors */ }
   return [WELCOME_MESSAGE];
 }
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotProps = {}) {
   const [messages, setMessages] = useState<Message[]>(loadHistory);
@@ -61,50 +82,59 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
   const [isListening, setIsListening] = useState(false);
   const [isDictating, setIsDictating] = useState(false);
-  const dictationRef = useRef<any>(null);
-  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>('idle');
   const [lastBotResponse, setLastBotResponse] = useState('');
+  const [displayContents, setDisplayContents] = useState<Record<string, string>>({});
+  const [confettiId, setConfettiId] = useState<string | null>(null);
+
+  const dictationRef = useRef<any>(null);
   const recognitionRef = useRef<any>(null);
   const recorderRef = useRef<{ recorder: MediaRecorder; stream: MediaStream } | null>(null);
   const conversationActiveRef = useRef(false);
-
-  // Typing reveal state
-  const [displayContents, setDisplayContents] = useState<Record<string, string>>({});
+  const interruptedRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Easter egg confetti state
-  const [confettiId, setConfettiId] = useState<string | null>(null);
-
-  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
-  const setIsOpen = (value: boolean) => {
-    if (onToggle) {
-      onToggle(value);
-    } else {
-      setInternalIsOpen(value);
-    }
-  };
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const openaiRef = useRef<OpenAI | null>(null);
   const chatRef = useRef<any>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Persist chat history (capped at 20 messages)
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = (value: boolean) => {
+    if (onToggle) onToggle(value);
+    else setInternalIsOpen(value);
+  };
+
+  // ── Audio helper ─────────────────────────────────────────────────────────
+
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+  }, []);
+
+  // ── Persistence ──────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (messages.length > 0) {
-      const toSave = messages.slice(-20);
-      localStorage.setItem('chat_history', JSON.stringify(toSave));
+      localStorage.setItem('chat_history', JSON.stringify(messages.slice(-HISTORY_CAP)));
     }
   }, [messages]);
 
-  // Cleanup typing interval on unmount
+  // ── Cleanup on unmount ───────────────────────────────────────────────────
+
   useEffect(() => {
     return () => {
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
     };
   }, []);
 
-  // Reveal message character by character
+  useEffect(() => {
+    return () => { stopAudio(); };
+  }, [stopAudio]);
+
+  // ── Typing reveal ────────────────────────────────────────────────────────
+
   const revealMessage = useCallback((id: string, content: string) => {
     if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
     setDisplayContents((prev) => ({ ...prev, [id]: '' }));
@@ -113,42 +143,30 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       i++;
       setDisplayContents((prev) => ({ ...prev, [id]: content.slice(0, i) }));
       if (i >= content.length) {
-        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+        clearInterval(typingIntervalRef.current!);
         typingIntervalRef.current = null;
       }
-    }, 25);
+    }, TYPING_SPEED_MS);
   }, []);
 
-  // VoiceRSS TTS — Indian English male voice, returns audio ArrayBuffer
-  const elevenLabsTTS = async (text: string): Promise<ArrayBuffer> => {
-    const apiKey = import.meta.env.VITE_VOICERSS_API_KEY;
-    const params = new URLSearchParams({
-      key: apiKey,
-      hl: 'en-in',
-      v: 'Ajit',
-      src: text,
-      c: 'MP3',
-      f: '44khz_16bit_stereo',
-      ssml: 'false',
-      b64: 'false',
-    });
-    const response = await fetch(`https://api.voicerss.org/?${params.toString()}`);
-    if (!response.ok) throw new Error(`VoiceRSS TTS error: ${response.status}`);
-    return response.arrayBuffer();
+  const getDisplayText = (msg: Message) => {
+    if (msg.role !== 'bot') return msg.content;
+    return msg.id in displayContents ? displayContents[msg.id] : msg.content;
   };
 
-  // Initialize OpenAI SDK with Groq base URL
+  // ── Groq client init ─────────────────────────────────────────────────────
+
   useEffect(() => {
     try {
       const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-      if (!apiKey) {
-        throw new Error('Groq API key not found. Please set VITE_GROQ_API_KEY in .env.local');
-      }
+      if (!apiKey) throw new Error('Groq API key not found. Please set VITE_GROQ_API_KEY in .env.local');
+
       openaiRef.current = new OpenAI({
-        apiKey: apiKey,
+        apiKey,
         baseURL: 'https://api.groq.com/openai/v1',
         dangerouslyAllowBrowser: true,
       });
+
       chatRef.current = {
         history: [] as { role: string; content: string }[],
         sendMessage: async (message: string) => {
@@ -177,7 +195,6 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               return { response: { text: () => assistantMessage } };
             } catch (err: any) {
               lastError = err;
-              continue;
             }
           }
           throw lastError;
@@ -188,50 +205,61 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     }
   }, []);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // ── Scroll ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, displayContents]);
 
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
+  // ── TTS (VoiceRSS — Indian English male) ─────────────────────────────────
+
+  const elevenLabsTTS = async (text: string): Promise<ArrayBuffer> => {
+    const params = new URLSearchParams({
+      key: import.meta.env.VITE_VOICERSS_API_KEY,
+      hl: 'en-in',
+      v: 'Ajit',
+      src: text,
+      c: 'MP3',
+      f: '44khz_16bit_stereo',
+      ssml: 'false',
+      b64: 'false',
+    });
+    const response = await fetch(`https://api.voicerss.org/?${params.toString()}`);
+    if (!response.ok) throw new Error(`VoiceRSS TTS error: ${response.status}`);
+    return response.arrayBuffer();
+  };
+
+  // ── Speak a bot message (from message list) ──────────────────────────────
 
   const handleSpeak = async (text: string, messageId: string) => {
     if (speakingMessageId === messageId) {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      stopAudio();
       setSpeakingMessageId(null);
       return;
     }
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    stopAudio();
     setSpeakingMessageId(messageId);
     try {
       const buffer = await elevenLabsTTS(text);
       const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }));
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; setSpeakingMessageId(null); };
-      audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; setSpeakingMessageId(null); };
+      const cleanup = () => { URL.revokeObjectURL(url); audioRef.current = null; setSpeakingMessageId(null); };
+      audio.onended = cleanup;
+      audio.onerror = cleanup;
       await audio.play();
     } catch {
       setSpeakingMessageId(null);
     }
   };
 
-  // Core send logic, shared between input submit and chip click
+  // ── Core send ────────────────────────────────────────────────────────────
+
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || !chatRef.current) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: uid(),
       role: 'user',
       content: text,
       timestamp: new Date(),
@@ -239,10 +267,9 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
-    // Easter egg check
-    const isHire = HIRE_KEYWORDS.some((kw) => text.toLowerCase().includes(kw));
-    if (isHire) {
-      const eggId = (Date.now() + 1).toString();
+    // Easter egg
+    if (HIRE_KEYWORDS.some((kw) => text.toLowerCase().includes(kw))) {
+      const eggId = uid();
       const eggMessage: Message = {
         id: eggId,
         role: 'bot',
@@ -253,7 +280,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setMessages((prev) => [...prev, eggMessage]);
       setConfettiId(eggId);
       revealMessage(eggId, EASTER_EGG_RESPONSE);
-      setTimeout(() => setConfettiId(null), 2000);
+      setTimeout(() => setConfettiId(null), CONFETTI_DURATION_MS);
       setLoading(false);
       return;
     }
@@ -261,27 +288,17 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     try {
       const result = await chatRef.current.sendMessage(text);
       const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: uid(),
         role: 'bot',
         content: result.response.text(),
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
       revealMessage(botMessage.id, botMessage.content);
-    } catch (error: any) {
-      const status = error?.status ?? error?.response?.status;
-      let friendlyMsg: string;
-      if (status === 429 || error?.message?.toLowerCase().includes('rate limit')) {
-        friendlyMsg = "I've hit my API rate limit for now. Please try again in a few minutes — or come back tomorrow. Sorry for the inconvenience!";
-      } else if (status === 401 || error?.message?.toLowerCase().includes('api key')) {
-        friendlyMsg = "There's an API key configuration issue. Please contact me at ramanathanmurugappan29@gmail.com.";
-      } else if (error?.message?.toLowerCase().includes('network') || error?.message?.toLowerCase().includes('fetch')) {
-        friendlyMsg = "Network error — please check your internet connection and try again.";
-      } else {
-        friendlyMsg = `Something went wrong: ${error?.message || 'Unknown error'}. Please try again later.`;
-      }
+    } catch (error) {
+      const friendlyMsg = getErrorMessage(error);
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: uid(),
         role: 'bot',
         content: friendlyMsg,
         timestamp: new Date(),
@@ -301,29 +318,25 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     await sendMessage(text);
   };
 
-  const handleChipClick = (question: string) => {
-    sendMessage(question);
-  };
-
   const handleNewChat = useCallback(() => {
     localStorage.removeItem('chat_history');
-    setMessages([{ ...WELCOME_MESSAGE, id: Date.now().toString(), timestamp: new Date() }]);
+    if (typingIntervalRef.current) { clearInterval(typingIntervalRef.current); typingIntervalRef.current = null; }
+    stopAudio();
+    setSpeakingMessageId(null);
     setDisplayContents({});
     setInput('');
     if (chatRef.current) chatRef.current.history = [];
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    setSpeakingMessageId(null);
-    if (typingIntervalRef.current) { clearInterval(typingIntervalRef.current); typingIntervalRef.current = null; }
-  }, []);
+    setMessages([{ ...WELCOME_MESSAGE, id: uid(), timestamp: new Date() }]);
+  }, [stopAudio]);
 
-  // Speech-to-text for chat input (mic icon in text mode)
+  // ── Dictation (mic icon in text input) ──────────────────────────────────
+
   const toggleDictation = useCallback(() => {
     if (isDictating && dictationRef.current) {
       dictationRef.current.stop();
       setIsDictating(false);
       return;
     }
-
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
@@ -336,7 +349,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     recognition.onstart = () => setIsDictating(true);
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setInput((prev) => prev ? prev + ' ' + transcript : transcript);
+      setInput((prev) => prev ? `${prev} ${transcript}` : transcript);
       setIsDictating(false);
     };
     recognition.onerror = () => setIsDictating(false);
@@ -345,11 +358,11 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     try { recognition.start(); } catch { setIsDictating(false); }
   }, [isDictating]);
 
-  const interruptedRef = useRef(false);
+  // ── Voice conversation ───────────────────────────────────────────────────
 
   const speakText = useCallback((text: string): Promise<'completed' | 'interrupted'> => {
     return new Promise(async (resolve) => {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      stopAudio();
       interruptedRef.current = false;
       try {
         const buffer = await elevenLabsTTS(text);
@@ -366,7 +379,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         resolve('completed');
       }
     });
-  }, []);
+  }, [stopAudio]);
 
   const listenOnce = useCallback((): Promise<string | null> => {
     return new Promise(async (resolve) => {
@@ -375,11 +388,11 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (err: any) {
         setIsListening(false);
-        if (err.name === 'NotAllowedError') {
-          setLastBotResponse('Microphone access denied. Please allow microphone permission and try again.');
-        } else {
-          setLastBotResponse('Could not access microphone. Please check your browser settings.');
-        }
+        setLastBotResponse(
+          err.name === 'NotAllowedError'
+            ? 'Microphone access denied. Please allow microphone permission and try again.'
+            : 'Could not access microphone. Please check your browser settings.'
+        );
         resolve(null);
         return;
       }
@@ -441,19 +454,17 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
         if (chunks.length === 0) { resolve(null); return; }
         const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
         try {
-          const apiKey = import.meta.env.VITE_GROQ_API_KEY;
           const formData = new FormData();
           formData.append('file', new File([blob], 'audio.webm', { type: mimeType || 'audio/webm' }));
           formData.append('model', 'whisper-large-v3-turbo');
           formData.append('language', 'en');
           const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${apiKey}` },
+            headers: { 'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}` },
             body: formData,
           });
           const data = await res.json();
-          const transcript = data.text?.trim() || null;
-          resolve(transcript);
+          resolve(data.text?.trim() || null);
         } catch {
           resolve(null);
         }
@@ -469,67 +480,47 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
   const stopConversation = useCallback(() => {
     conversationActiveRef.current = false;
     if (recorderRef.current) {
-      try { recorderRef.current.recorder.stop(); recorderRef.current.stream.getTracks().forEach(t => t.stop()); } catch { /* ignore */ }
+      try {
+        recorderRef.current.recorder.stop();
+        recorderRef.current.stream.getTracks().forEach(t => t.stop());
+      } catch { /* ignore */ }
       recorderRef.current = null;
     }
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    stopAudio();
     interruptedRef.current = true;
     setIsListening(false);
     setVoiceStatus('idle');
-  }, []);
+  }, [stopAudio]);
 
   const runConversationLoop = useCallback(async () => {
     conversationActiveRef.current = true;
 
     const transcript = await listenOnce();
     if (!conversationActiveRef.current) { setVoiceStatus('idle'); setIsListening(false); return; }
-    if (!transcript || !transcript.trim()) { stopConversation(); return; }
-    if (!chatRef.current) { stopConversation(); return; }
+    if (!transcript?.trim() || !chatRef.current) { stopConversation(); return; }
 
     setVoiceStatus('thinking');
-    const userMessage: Message = {
-      id: Date.now().toString(),
+    setMessages((prev) => [...prev, {
+      id: uid(),
       role: 'user',
       content: transcript.trim(),
       timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
+    }]);
 
     try {
       const result = await chatRef.current.sendMessage(transcript.trim());
       const responseText = result.response.text();
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        content: responseText,
-        timestamp: new Date(),
-      };
+      const botMessage: Message = { id: uid(), role: 'bot', content: responseText, timestamp: new Date() };
       setMessages((prev) => [...prev, botMessage]);
       setLastBotResponse(responseText);
 
-      if (!conversationActiveRef.current) { stopConversation(); return; }
-
-      setVoiceStatus('speaking');
-      await speakText(responseText);
-    } catch (error: any) {
-      const status = error?.status ?? error?.response?.status;
-      let friendlyMsg: string;
-      if (status === 429 || error?.message?.toLowerCase().includes('rate limit')) {
-        friendlyMsg = "I've hit my API rate limit for now. Please try again in a few minutes — or come back tomorrow. Sorry for the inconvenience!";
-      } else if (status === 401 || error?.message?.toLowerCase().includes('api key')) {
-        friendlyMsg = "There's an API key configuration issue. Please contact me at ramanathanmurugappan29@gmail.com.";
-      } else if (error?.message?.toLowerCase().includes('network') || error?.message?.toLowerCase().includes('fetch')) {
-        friendlyMsg = "Network error — please check your internet connection and try again.";
-      } else {
-        friendlyMsg = `Something went wrong: ${error?.message || 'Unknown error'}. Please try again later.`;
+      if (conversationActiveRef.current) {
+        setVoiceStatus('speaking');
+        await speakText(responseText);
       }
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        content: friendlyMsg,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+    } catch (error) {
+      const friendlyMsg = getErrorMessage(error);
+      setMessages((prev) => [...prev, { id: uid(), role: 'bot', content: friendlyMsg, timestamp: new Date() }]);
       setLastBotResponse(friendlyMsg);
     }
 
@@ -541,12 +532,11 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
       setLastBotResponse('Voice mode requires HTTPS or localhost.');
       return;
     }
-    if (conversationActiveRef.current) {
-      stopConversation();
-    } else {
-      runConversationLoop();
-    }
+    if (conversationActiveRef.current) stopConversation();
+    else runConversationLoop();
   }, [runConversationLoop, stopConversation]);
+
+  // ── Side-effect guards ───────────────────────────────────────────────────
 
   useEffect(() => {
     return () => {
@@ -576,19 +566,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     }
   }, [chatMode, stopConversation]);
 
-  const voiceStatusText = {
-    idle: 'Tap mic to speak',
-    listening: 'Listening... (speak now)',
-    thinking: 'Thinking...',
-    speaking: 'Speaking... (tap to stop)',
-  };
-
-  // Get display text for a bot message (animated or full)
-  const getDisplayText = (msg: Message) => {
-    if (msg.role !== 'bot') return msg.content;
-    if (msg.id in displayContents) return displayContents[msg.id];
-    return msg.content;
-  };
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-50 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
@@ -612,23 +590,19 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               </div>
             </div>
             <div className="flex items-center gap-[6px]">
+              {/* Chat / Voice toggle */}
               <div className="flex items-center bg-white/[0.07] rounded-[8px] p-[2px]">
-                <button
-                  onClick={() => setChatMode('text')}
-                  className={`text-[10px] px-[10px] py-[4px] rounded-[6px] font-semibold transition-all duration-200 ${
-                    chatMode === 'text' ? 'bg-[#1e6ef4] text-white' : 'text-white/45 hover:text-white/70'
-                  }`}
-                >
-                  Chat
-                </button>
-                <button
-                  onClick={() => setChatMode('voice')}
-                  className={`text-[10px] px-[10px] py-[4px] rounded-[6px] font-semibold transition-all duration-200 ${
-                    chatMode === 'voice' ? 'bg-[#1e6ef4] text-white' : 'text-white/45 hover:text-white/70'
-                  }`}
-                >
-                  Voice
-                </button>
+                {(['text', 'voice'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setChatMode(mode)}
+                    className={`text-[10px] px-[10px] py-[4px] rounded-[6px] font-semibold transition-all duration-200 ${
+                      chatMode === mode ? 'bg-[#1e6ef4] text-white' : 'text-white/45 hover:text-white/70'
+                    }`}
+                  >
+                    {mode === 'text' ? 'Chat' : 'Voice'}
+                  </button>
+                ))}
               </div>
               {/* Close */}
               <button
@@ -645,7 +619,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               {/* ── Messages ── */}
               <div className="flex-1 overflow-y-auto chat-messages p-3 space-y-[10px] bg-[#f6f6f7] dark:bg-[#0a0a0a]">
 
-                {/* New conversation pill — shown when history exists */}
+                {/* New conversation pill */}
                 {messages.length > 1 && (
                   <div className="flex justify-center pt-[2px] pb-[4px]">
                     <button
@@ -720,7 +694,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                   ))}
                 </AnimatePresence>
 
-                {/* ── Wave-bar typing indicator ── */}
+                {/* Wave-bar typing indicator */}
                 {loading && (
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
@@ -747,13 +721,13 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* ── Suggested question chips — shown only before first user message ── */}
+              {/* Suggested question chips */}
               {messages.length === 1 && !loading && (
                 <div className="px-3 pt-[6px] pb-[2px] flex flex-wrap gap-[6px] bg-[#f6f6f7] dark:bg-[#0a0a0a] flex-shrink-0">
                   {SUGGESTED_QUESTIONS.map((q) => (
                     <button
                       key={q}
-                      onClick={() => handleChipClick(q)}
+                      onClick={() => sendMessage(q)}
                       className="px-[10px] py-[5px] rounded-full border border-[#1e6ef4]/30 text-[11px] font-semibold text-[#1e6ef4] hover:bg-[#1e6ef4]/10 transition-all duration-200 whitespace-nowrap"
                     >
                       {q}
@@ -775,7 +749,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                       disabled={loading}
                     />
                     <div className="absolute right-[8px] top-1/2 -translate-y-1/2 flex items-center gap-[4px]">
-                      {/* Mic */}
+                      {/* Mic (dictation) */}
                       <button
                         type="button"
                         onClick={toggleDictation}
@@ -811,72 +785,11 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               </div>
             </>
           ) : (
-            /* ── Voice Mode ── */
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#f6f6f7] dark:bg-[#0a0a0a] p-6 gap-5">
-              <div className="relative">
-                {(voiceStatus === 'listening' || voiceStatus === 'speaking') && (
-                  <>
-                    <div className={`absolute -inset-6 rounded-full animate-ping opacity-20 ${voiceStatus === 'listening' ? 'bg-red-500' : 'bg-[#1e6ef4]'}`} style={{ animationDuration: '2s' }} />
-                    <div className={`absolute -inset-3 rounded-full animate-ping opacity-30 ${voiceStatus === 'listening' ? 'bg-red-500' : 'bg-[#1e6ef4]'}`} style={{ animationDuration: '1.5s' }} />
-                  </>
-                )}
-                <button
-                  onClick={toggleListening}
-                  className={`relative z-10 w-[80px] h-[80px] rounded-full flex items-center justify-center transition-all duration-300 ${
-                    voiceStatus === 'listening'
-                      ? 'bg-red-500 text-white scale-110 shadow-[0_0_32px_rgba(239,68,68,0.5)]'
-                      : voiceStatus === 'thinking'
-                      ? 'bg-amber-500 text-white shadow-[0_0_32px_rgba(245,158,11,0.4)]'
-                      : 'bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white hover:scale-105 active:scale-95 shadow-[0_0_28px_rgba(30,110,244,0.4)]'
-                  }`}
-                >
-                  {voiceStatus === 'listening' ? (
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                      <line x1="12" y1="19" x2="12" y2="23"/>
-                      <line x1="8" y1="23" x2="16" y2="23"/>
-                    </svg>
-                  ) : voiceStatus === 'thinking' ? (
-                    <div className="flex items-end gap-[3px]">
-                      {[0, 1, 2, 3, 4].map((i) => (
-                        <div key={i} className="w-[3px] rounded-full bg-white" style={{ animation: 'wave-bar 1s ease-in-out infinite', animationDelay: `${i * 0.12}s` }} />
-                      ))}
-                    </div>
-                  ) : voiceStatus === 'speaking' ? (
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                    </svg>
-                  ) : (
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                      <line x1="12" y1="19" x2="12" y2="23"/>
-                      <line x1="8" y1="23" x2="16" y2="23"/>
-                    </svg>
-                  )}
-                </button>
-              </div>
-
-              <p className={`text-[12px] font-semibold tracking-wide uppercase ${
-                voiceStatus === 'listening' ? 'text-red-500'
-                : voiceStatus === 'speaking' ? 'text-[#1e6ef4]'
-                : voiceStatus === 'thinking' ? 'text-amber-500'
-                : 'text-black/35 dark:text-white/35'
-              }`}>
-                {voiceStatusText[voiceStatus]}
-              </p>
-
-              {lastBotResponse && (
-                <div className="w-full bg-white dark:bg-[#1c1c1e] rounded-[16px] p-[14px] border-l-2 border-[#1e6ef4] shadow-sm">
-                  <p className="text-[11px] md:text-[12px] text-black/60 dark:text-white/60 leading-[165%]">
-                    {lastBotResponse}
-                  </p>
-                </div>
-              )}
-            </div>
+            <VoiceMode
+              voiceStatus={voiceStatus}
+              lastBotResponse={lastBotResponse}
+              onToggle={toggleListening}
+            />
           )}
         </div>
       )}
