@@ -178,7 +178,7 @@ function FlipCard({ card, index }: { card: CardData; index: number }) {
       <motion.div
         animate={{ rotateY }}
         transition={{ duration: 0.55, ease: 'easeInOut' }}
-        style={{ transformStyle: 'preserve-3d', position: 'relative', height: 220 }}
+        style={{ transformStyle: 'preserve-3d', position: 'relative', height: 'clamp(200px, 55vw, 220px)' }}
       >
         {/* ── Front face ── */}
         <div
@@ -242,7 +242,7 @@ export default function AboutSection() {
     <div className="container flex flex-col gap-[32px]">
       <SectionHeader eyebrow="👋 About" title="Get to Know Me" />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-[12px] md:gap-[16px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[12px] md:gap-[16px]">
         {CARDS.map((card, i) => (
           <FlipCard key={i} card={card} index={i} />
         ))}

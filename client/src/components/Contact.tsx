@@ -26,7 +26,7 @@ function ContactCard({ iconElement, label, value, href, delay }: ContactCardProp
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, margin: '-40px' },
     transition: { duration: 0.5, ease: 'easeOut' as const, delay },
-    className: 'group flex flex-col items-center gap-[6px] p-[28px] rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-center card-hover',
+    className: 'group flex flex-col items-center gap-[6px] p-[20px] md:p-[28px] rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-center card-hover',
   };
 
   const inner = (

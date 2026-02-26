@@ -236,7 +236,7 @@ export default function Hero() {
             >
               <div className="w-[8px] h-[8px] rounded-full bg-[#35c759] status-online" />
               <span className="text-[12px] font-semibold text-black/50 dark:text-white/50">
-                Available for work · Bengaluru
+                Available to connect
               </span>
             </motion.div>
 

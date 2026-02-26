@@ -22,11 +22,11 @@ export default function Achievements() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.55, ease: 'easeOut', delay: idx * 0.07 }}
-            className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[40px] flex items-center justify-between min-h-[160px] relative overflow-hidden achievement-card subtle-border"
+            className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[20px] md:p-[40px] flex items-center justify-between min-h-[120px] md:min-h-[160px] relative overflow-hidden achievement-card subtle-border"
           >
             {/* Avatar on Left */}
             {achievement.memojiPosition === 'left' && (
-              <div className="w-[140px] h-[140px] flex-shrink-0 -ml-[10px] rounded-[20px] overflow-hidden bg-[#E8E0F0] dark:bg-[#2D1F45]">
+              <div className="w-[90px] h-[90px] md:w-[140px] md:h-[140px] flex-shrink-0 -ml-[4px] md:-ml-[10px] rounded-[16px] md:rounded-[20px] overflow-hidden bg-[#E8E0F0] dark:bg-[#2D1F45]">
                 <img
                   src={achievement.memojiImage}
                   alt="Ramanathan"
@@ -49,7 +49,7 @@ export default function Achievements() {
                   {achievement.highlight}
                 </span>
               )}
-              <span className="text-[36px] leading-[100%] tracking-[-0.03em] font-semibold text-black dark:text-white">
+              <span className="text-[24px] md:text-[36px] leading-[100%] tracking-[-0.03em] font-semibold text-black dark:text-white">
                 {achievement.title}
               </span>
               <span
@@ -73,7 +73,7 @@ export default function Achievements() {
 
             {/* Avatar on Right */}
             {achievement.memojiPosition === 'right' && (
-              <div className="w-[140px] h-[140px] flex-shrink-0 -mr-[10px] rounded-[20px] overflow-hidden bg-[#E8E0F0] dark:bg-[#2D1F45]">
+              <div className="w-[90px] h-[90px] md:w-[140px] md:h-[140px] flex-shrink-0 -mr-[4px] md:-mr-[10px] rounded-[16px] md:rounded-[20px] overflow-hidden bg-[#E8E0F0] dark:bg-[#2D1F45]">
                 <img
                   src={achievement.memojiImage}
                   alt="Ramanathan"
@@ -87,7 +87,7 @@ export default function Achievements() {
 
       {/* Publications Section */}
       <div className="flex flex-col gap-[20px] mt-[20px]">
-        <h3 className="text-[24px] leading-[116%] tracking-[-0.02em] font-semibold text-center text-black dark:text-white">
+        <h3 className="text-[20px] md:text-[24px] leading-[116%] tracking-[-0.02em] font-semibold text-center text-black dark:text-white">
           📄 Research Publications
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">

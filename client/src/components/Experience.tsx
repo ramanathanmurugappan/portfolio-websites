@@ -85,7 +85,7 @@ export default function Experience() {
                 const isAct = active === i;
                 return (
                   <button key={e.company} onClick={() => setActive(i)}
-                    className="flex items-center gap-[10px] rounded-[12px] px-[12px] py-[9px]
+                    className="flex items-center gap-[10px] rounded-[12px] px-[12px] py-[10px] min-h-[44px]
                                transition-all duration-200 cursor-pointer text-left w-full"
                     style={{
                       background: isAct ? `${c}18` : 'transparent',
