@@ -7,21 +7,10 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import SectionHeader from './SectionHeader';
 import { experiences } from '../data/experience';
-
-const COLORS: Record<string, string> = {
-  'ITC Infotech': '#1e6ef4',
-  'Accenture':    '#a100ff',
-  'Kaleidofin':   '#00b388',
-};
-
-const LOGOS: Record<string, string> = {
-  'ITC Infotech': '/images/company-itcinfotech.png',
-  'Accenture':    '/images/company-accenture.png',
-  'Kaleidofin':   '/images/company-kaleidofin.png',
-};
+import { companyColor, COMPANY_LOGOS } from '../data/brandColors';
 
 function CompanyLogo({ company, size = 40 }: { company: string; size?: number }) {
-  const color = COLORS[company] ?? '#1e6ef4';
+  const color = companyColor(company);
   return (
     <div style={{
       width: size, height: size, borderRadius: size * 0.28,
@@ -29,7 +18,7 @@ function CompanyLogo({ company, size = 40 }: { company: string; size?: number })
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       overflow: 'hidden', flexShrink: 0, boxShadow: `0 2px 8px ${color}18`,
     }}>
-      <img src={LOGOS[company]} alt={company}
+      <img src={COMPANY_LOGOS[company]} alt={company}
         style={{ width: '82%', height: '82%', objectFit: 'contain' }} />
     </div>
   );
@@ -38,7 +27,7 @@ function CompanyLogo({ company, size = 40 }: { company: string; size?: number })
 export default function Experience() {
   const [active, setActive] = useState(0);
   const exp = experiences[active];
-  const color = COLORS[exp.company] ?? '#1e6ef4';
+  const color = companyColor(exp.company);
 
   return (
     <div className="flex flex-col gap-[40px]">
@@ -81,7 +70,7 @@ export default function Experience() {
             {/* Company selector tabs */}
             <div className="flex md:flex-col gap-[6px] mt-[24px]">
               {experiences.map((e, i) => {
-                const c = COLORS[e.company] ?? '#1e6ef4';
+                const c = companyColor(e.company);
                 const isAct = active === i;
                 return (
                   <button key={e.company} onClick={() => setActive(i)}

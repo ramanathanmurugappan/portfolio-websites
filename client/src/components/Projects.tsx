@@ -8,17 +8,12 @@
 import { motion } from 'framer-motion';
 import SectionHeader from './SectionHeader';
 import { projects } from '../data/projects';
-
-const COMPANY_COLORS: Record<string, string> = {
-  'ITC Infotech': '#1e6ef4',
-  'Accenture':    '#a100ff',
-  'Kaleidofin':   '#00b388',
-};
+import { companyColor } from '../data/brandColors';
 
 // ── Hero Card ─────────────────────────────────────────────────────────────────
 
 function HeroCard({ p }: { p: typeof projects[0] }) {
-  const color = COMPANY_COLORS[p.company] ?? '#1e6ef4';
+  const color = companyColor(p.company);
   return (
     <motion.div
       className="rounded-[28px] overflow-hidden relative cursor-pointer"
@@ -78,7 +73,7 @@ function HeroCard({ p }: { p: typeof projects[0] }) {
 // ── Grid Card ─────────────────────────────────────────────────────────────────
 
 function GridCard({ p, index }: { p: typeof projects[0]; index: number }) {
-  const color = COMPANY_COLORS[p.company] ?? '#1e6ef4';
+  const color = companyColor(p.company);
   return (
     <motion.div
       className="rounded-[20px] overflow-hidden bg-[#f7f7f7] dark:bg-[#1a1a1a] card-hover flex flex-col"
