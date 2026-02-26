@@ -11,6 +11,7 @@ import { PROFILE_CONTEXT, GROQ_MODELS } from '../lib/profileContext';
 import { uid, getErrorMessage } from '../lib/chatUtils';
 import VoiceMode from './VoiceMode';
 import type { VoiceStatus } from './VoiceMode';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -568,37 +569,52 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
 
   // ── Render ───────────────────────────────────────────────────────────────
 
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  // Dark neumorphic palette
+  const nm = {
+    bg:    isDark ? '#1e1e22' : '#e8e8ec',
+    sd:    isDark ? '#14141a' : '#d1d1d5',   // shadow dark side
+    sl:    isDark ? '#28282e' : '#ffffff',   // shadow light side
+    text:  isDark ? '#c4c4cc' : '#444',
+    muted: isDark ? '#58586a' : '#999',
+    faint: isDark ? '#38384a' : '#bbb',
+    raised: (n: number) => `${n}px ${n}px ${n*2}px ${isDark ? '#14141a' : '#d1d1d5'}, -${n}px -${n}px ${n*2}px ${isDark ? '#28282e' : '#ffffff'}`,
+    inset:  (n: number) => `inset ${n}px ${n}px ${n*2}px ${isDark ? '#14141a' : '#d1d1d5'}, inset -${n}px -${n}px ${n*2}px ${isDark ? '#28282e' : '#ffffff'}`,
+  };
+
   return (
     <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-50 w-[320px] max-w-[calc(100vw-32px)] md:max-w-[calc(100vw-48px)]">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-3 rounded-[24px] overflow-hidden flex flex-col h-[460px] md:h-[520px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)] bg-white dark:bg-[#111] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_64px_-12px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)]">
+        <div className="mb-3 rounded-[24px] overflow-hidden flex flex-col h-[460px] md:h-[520px] max-h-[calc(100vh-120px)] md:max-h-[calc(100vh-140px)]" style={{ background: nm.bg, boxShadow: nm.raised(8) }}>
 
           {/* ── Header ── */}
-          <div className="relative px-4 py-[10px] flex items-center justify-between bg-gradient-to-r from-[#0c1425] via-[#162040] to-[#0c1425] flex-shrink-0">
-            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#1e6ef4] to-transparent opacity-50" />
+          <div className="relative px-4 py-[10px] flex items-center justify-between flex-shrink-0 mx-[10px] mt-[10px] rounded-[16px]" style={{ background: nm.bg, boxShadow: nm.raised(4) }}>
             <div className="flex items-center gap-[10px]">
               <div className="relative flex-shrink-0">
-                <div className="w-[34px] h-[34px] rounded-[10px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] flex items-center justify-center text-white text-[13px] font-bold shadow-[0_0_12px_rgba(30,110,244,0.45)]">
-                  R
+                <div className="w-[36px] h-[36px] rounded-[10px] overflow-hidden" style={{ boxShadow: nm.raised(3) }}>
+                  <img src="/images/avatar-hero.png" alt="Ramanathan" className="w-full h-full object-cover object-top" />
                 </div>
-                <div className="absolute -bottom-[2px] -right-[2px] w-[9px] h-[9px] rounded-full bg-[#35c759] border-[2px] border-[#0c1425]" />
+                <div className="absolute -bottom-[2px] -right-[2px] w-[9px] h-[9px] rounded-full bg-[#35c759]" style={{ border: `2px solid ${nm.bg}` }} />
               </div>
               <div>
-                <h3 className="text-[13px] font-semibold text-white leading-none">Ramanathan's AI</h3>
-                <p className="text-[10px] text-white/35 mt-[3px]">Always online</p>
+                <h3 className="text-[13px] font-semibold leading-none" style={{ color: nm.text }}>Ramanathan's AI</h3>
               </div>
             </div>
             <div className="flex items-center gap-[6px]">
               {/* Chat / Voice toggle */}
-              <div className="flex items-center bg-white/[0.07] rounded-[8px] p-[2px]">
+              <div className="flex items-center rounded-[8px] p-[2px]" style={{ background: nm.bg, boxShadow: nm.inset(2) }}>
                 {(['text', 'voice'] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setChatMode(mode)}
-                    className={`text-[10px] px-[10px] py-[4px] rounded-[6px] font-semibold transition-all duration-200 ${
-                      chatMode === mode ? 'bg-[#1e6ef4] text-white' : 'text-white/45 hover:text-white/70'
-                    }`}
+                    className="text-[10px] px-[10px] py-[4px] rounded-[6px] font-semibold transition-all duration-200"
+                    style={{
+                      background: chatMode === mode ? 'linear-gradient(135deg,#1e6ef4,#4f46e5)' : 'transparent',
+                      color: chatMode === mode ? '#fff' : nm.muted,
+                      boxShadow: chatMode === mode ? '2px 2px 5px rgba(30,110,244,0.3)' : 'none',
+                    }}
                   >
                     {mode === 'text' ? 'Chat' : 'Voice'}
                   </button>
@@ -607,7 +623,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               {/* Close */}
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center text-white/35 hover:text-white hover:bg-white/10 transition-all duration-200 text-[18px] leading-none"
+                className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center transition-all duration-200 text-[18px] leading-none"
+                style={{ color: nm.faint }}
               >
                 ×
               </button>
@@ -617,14 +634,15 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
           {chatMode === 'text' ? (
             <>
               {/* ── Messages ── */}
-              <div className="flex-1 overflow-y-auto chat-messages p-3 space-y-[10px] bg-[#f6f6f7] dark:bg-[#0a0a0a]">
+              <div className="flex-1 overflow-y-auto chat-messages p-3 space-y-[10px]" style={{ background: nm.bg }}>
 
                 {/* New conversation pill */}
                 {messages.length > 1 && (
                   <div className="flex justify-center pt-[2px] pb-[4px]">
                     <button
                       onClick={handleNewChat}
-                      className="flex items-center gap-[5px] px-[12px] py-[5px] rounded-full border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1c1c1e] text-[11px] font-semibold text-black/35 dark:text-white/35 hover:text-[#1e6ef4] hover:border-[#1e6ef4]/40 hover:bg-[#1e6ef4]/5 transition-all duration-200 shadow-sm"
+                      className="flex items-center gap-[5px] px-[12px] py-[5px] rounded-full text-[11px] font-semibold hover:text-[#1e6ef4] transition-all duration-200"
+                      style={{ background: nm.bg, boxShadow: nm.raised(3), color: nm.text }}
                     >
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -646,8 +664,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                     >
                       <div className={`flex items-end gap-[6px] max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                         {msg.role === 'bot' && (
-                          <div className="w-[20px] h-[20px] rounded-[6px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 mb-[2px]">
-                            R
+                          <div className="w-[26px] h-[26px] rounded-[8px] overflow-hidden flex-shrink-0 mb-[2px]" style={{ boxShadow: nm.raised(3) }}>
+                            <img src="/images/avatar-hero.png" alt="R" className="w-full h-full object-cover object-top" />
                           </div>
                         )}
                         <div className="relative">
@@ -666,24 +684,29 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                               ))}
                             </div>
                           )}
-                          <div
-                            className={`rounded-[14px] px-[12px] py-[8px] text-[12px] md:text-[13px] leading-[155%] ${
-                              msg.role === 'user'
-                                ? 'bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white rounded-br-[4px]'
-                                : msg.isEasterEgg
-                                ? 'bg-gradient-to-br from-[#1e6ef4]/10 to-[#4f46e5]/10 text-black/85 dark:text-white/85 border-l-2 border-[#1e6ef4] rounded-bl-[4px] shadow-sm dark:shadow-none'
-                                : 'bg-white dark:bg-[#1c1c1e] text-black/85 dark:text-white/85 border-l-2 border-[#1e6ef4] rounded-bl-[4px] shadow-sm dark:shadow-none'
-                            }`}
-                          >
-                            {getDisplayText(msg)}
-                          </div>
+                          {msg.role === 'bot' ? (
+                            <div className="rounded-[14px] rounded-bl-[4px] px-[12px] py-[9px] text-[12px] md:text-[13px] leading-[155%]"
+                              style={{
+                                background: nm.bg,
+                                boxShadow: msg.isEasterEgg ? nm.inset(2) : nm.raised(4),
+                                color: nm.text,
+                              }}>
+                              {getDisplayText(msg)}
+                            </div>
+                          ) : (
+                            <div className="rounded-[14px] rounded-br-[4px] px-[12px] py-[9px] text-[12px] md:text-[13px] leading-[155%] text-white"
+                              style={{ background: 'linear-gradient(135deg,#1e6ef4,#4f46e5)', boxShadow: '3px 3px 8px rgba(30,110,244,0.35)' }}>
+                              {getDisplayText(msg)}
+                            </div>
+                          )}
                         </div>
                         {msg.role === 'bot' && (
                           <button
                             onClick={() => handleSpeak(msg.content, msg.id)}
-                            className={`flex-shrink-0 w-[20px] h-[20px] flex items-center justify-center rounded-full text-[10px] transition-all hover:bg-black/10 dark:hover:bg-white/10 mb-[2px] ${
-                              speakingMessageId === msg.id ? 'text-[#1e6ef4] animate-pulse' : 'text-black/25 dark:text-white/25'
+                            className={`flex-shrink-0 w-[20px] h-[20px] flex items-center justify-center rounded-full text-[10px] transition-all mb-[2px] ${
+                              speakingMessageId === msg.id ? 'animate-pulse' : 'opacity-50 hover:opacity-80'
                             }`}
+                            style={{ color: speakingMessageId === msg.id ? '#1e6ef4' : nm.muted }}
                             title={speakingMessageId === msg.id ? 'Stop speaking' : 'Read aloud'}
                           >
                             {speakingMessageId === msg.id ? '🔊' : '🔈'}
@@ -694,7 +717,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                   ))}
                 </AnimatePresence>
 
-                {/* Wave-bar typing indicator */}
+                {/* Dot typing indicator */}
                 {loading && (
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
@@ -703,15 +726,15 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                     className="flex justify-start"
                   >
                     <div className="flex items-end gap-[6px]">
-                      <div className="w-[20px] h-[20px] rounded-[6px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0">
-                        R
+                      <div className="w-[26px] h-[26px] rounded-[8px] overflow-hidden flex-shrink-0" style={{ boxShadow: nm.raised(3) }}>
+                        <img src="/images/avatar-hero.png" alt="R" className="w-full h-full object-cover object-top" />
                       </div>
-                      <div className="bg-white dark:bg-[#1c1c1e] rounded-[14px] rounded-bl-[4px] border-l-2 border-[#1e6ef4] px-[12px] py-[10px] shadow-sm flex items-end gap-[3px]">
-                        {[0, 1, 2, 3, 4].map((i) => (
+                      <div className="rounded-[14px] rounded-bl-[4px] px-[14px] py-[12px] flex items-end gap-[4px]" style={{ background: nm.bg, boxShadow: nm.raised(4) }}>
+                        {[0, 1, 2].map((i) => (
                           <div
                             key={i}
-                            className="w-[3px] rounded-full bg-[#1e6ef4]"
-                            style={{ animation: 'wave-bar 1s ease-in-out infinite', animationDelay: `${i * 0.12}s` }}
+                            className="w-[7px] h-[7px] rounded-full"
+                            style={{ background: '#1e6ef4', opacity: 0.7, animation: 'wave-bar 1s ease-in-out infinite', animationDelay: `${i * 0.18}s` }}
                           />
                         ))}
                       </div>
@@ -723,12 +746,13 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
 
               {/* Suggested question chips */}
               {messages.length === 1 && !loading && (
-                <div className="px-3 pt-[6px] pb-[2px] flex flex-wrap gap-[6px] bg-[#f6f6f7] dark:bg-[#0a0a0a] flex-shrink-0">
+                <div className="px-3 pt-[6px] pb-[2px] flex flex-wrap gap-[6px] flex-shrink-0" style={{ background: nm.bg }}>
                   {SUGGESTED_QUESTIONS.map((q) => (
                     <button
                       key={q}
                       onClick={() => sendMessage(q)}
-                      className="px-[10px] py-[5px] rounded-full border border-[#1e6ef4]/30 text-[11px] font-semibold text-[#1e6ef4] hover:bg-[#1e6ef4]/10 transition-all duration-200 whitespace-nowrap"
+                      className="px-[10px] py-[5px] rounded-full text-[11px] font-semibold transition-all duration-200 whitespace-nowrap"
+                      style={{ background: nm.bg, boxShadow: nm.raised(3), color: '#1e6ef4' }}
                     >
                       {q}
                     </button>
@@ -737,15 +761,16 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               )}
 
               {/* ── Input area ── */}
-              <div className="border-t border-black/[0.05] dark:border-white/[0.05] px-3 py-[10px] bg-white dark:bg-[#111] flex-shrink-0">
+              <div className="px-3 py-[10px] flex-shrink-0" style={{ background: nm.bg, borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
                 <form onSubmit={handleSendMessage}>
-                  <div className="relative bg-[#f4f4f5] dark:bg-[#1c1c1e] rounded-[14px] ring-1 ring-black/[0.06] dark:ring-white/[0.05] focus-within:ring-[#1e6ef4]/50 transition-all duration-200">
+                  <div className="relative rounded-[14px] transition-all duration-200" style={{ background: nm.bg, boxShadow: nm.inset(4) }}>
                     <input
                       type="text"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       placeholder="Ask me anything..."
-                      className="w-full bg-transparent text-[12px] md:text-[13px] placeholder-black/30 dark:placeholder-white/25 focus:outline-none text-black dark:text-white pl-[12px] pr-[74px] py-[9px] rounded-[14px]"
+                      className={`w-full bg-transparent text-[12px] md:text-[13px] focus:outline-none pl-[12px] pr-[74px] py-[10px] rounded-[14px] ${isDark ? 'placeholder:text-[#3a3a4a]' : 'placeholder:text-[#b8b8c0]'}`}
+                      style={{ color: nm.text, caretColor: '#1e6ef4' }}
                       disabled={loading}
                     />
                     <div className="absolute right-[8px] top-1/2 -translate-y-1/2 flex items-center gap-[4px]">
@@ -754,11 +779,8 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                         type="button"
                         onClick={toggleDictation}
                         disabled={loading}
-                        className={`w-[28px] h-[28px] rounded-[8px] flex items-center justify-center transition-all duration-200 ${
-                          isDictating
-                            ? 'bg-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.4)]'
-                            : 'text-black/30 dark:text-white/30 hover:text-[#1e6ef4] hover:bg-[#1e6ef4]/10'
-                        } disabled:opacity-40`}
+                        className={`w-[28px] h-[28px] rounded-[8px] flex items-center justify-center transition-all duration-200 ${isDictating ? 'bg-red-500 text-white' : ''} disabled:opacity-40`}
+                        style={isDictating ? { boxShadow: '0 0 8px rgba(239,68,68,0.4)' } : { background: nm.bg, boxShadow: nm.raised(2), color: nm.muted }}
                         title={isDictating ? 'Stop listening' : 'Speak to type'}
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -773,6 +795,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
                         type="submit"
                         disabled={loading || !input.trim()}
                         className="w-[28px] h-[28px] rounded-[8px] bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white flex items-center justify-center transition-all duration-200 hover:opacity-90 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:scale-100 disabled:hover:opacity-30"
+                        style={{ boxShadow: '2px 2px 6px rgba(30,110,244,0.4)' }}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <line x1="22" y1="2" x2="11" y2="13"/>
@@ -789,6 +812,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
               voiceStatus={voiceStatus}
               lastBotResponse={lastBotResponse}
               onToggle={toggleListening}
+              isDark={isDark}
             />
           )}
         </div>

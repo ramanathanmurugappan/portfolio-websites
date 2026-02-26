@@ -9,6 +9,7 @@ interface VoiceModeProps {
   voiceStatus: VoiceStatus;
   lastBotResponse: string;
   onToggle: () => void;
+  isDark?: boolean;
 }
 
 const STATUS_TEXT: Record<VoiceStatus, string> = {
@@ -35,47 +36,65 @@ const SpeakerIcon = () => (
   </svg>
 );
 
-const WaveBars = ({ color = 'bg-white' }: { color?: string }) => (
+const WaveBars = () => (
   <div className="flex items-end gap-[3px]">
     {[0, 1, 2, 3, 4].map((i) => (
       <div
         key={i}
-        className={`w-[3px] rounded-full ${color}`}
-        style={{ animation: 'wave-bar 1s ease-in-out infinite', animationDelay: `${i * 0.12}s` }}
+        className="w-[3px] rounded-full"
+        style={{ background: '#f59e0b', animation: 'wave-bar 1s ease-in-out infinite', animationDelay: `${i * 0.12}s` }}
       />
     ))}
   </div>
 );
 
-export default function VoiceMode({ voiceStatus, lastBotResponse, onToggle }: VoiceModeProps) {
+export default function VoiceMode({ voiceStatus, lastBotResponse, onToggle, isDark = false }: VoiceModeProps) {
   const isActive = voiceStatus === 'listening' || voiceStatus === 'speaking';
 
-  const buttonClass = voiceStatus === 'listening'
-    ? 'bg-red-500 text-white scale-110 shadow-[0_0_32px_rgba(239,68,68,0.5)]'
+  const nm = {
+    bg:    isDark ? '#1e1e22' : '#e8e8ec',
+    sd:    isDark ? '#14141a' : '#d1d1d5',
+    sl:    isDark ? '#28282e' : '#ffffff',
+    text:  isDark ? '#c4c4cc' : '#555',
+    raised: (n: number) => `${n}px ${n}px ${n*2}px ${isDark ? '#14141a' : '#d1d1d5'}, -${n}px -${n}px ${n*2}px ${isDark ? '#28282e' : '#ffffff'}`,
+    inset:  (n: number) => `inset ${n}px ${n}px ${n*2}px ${isDark ? '#14141a' : '#d1d1d5'}, inset -${n}px -${n}px ${n*2}px ${isDark ? '#28282e' : '#ffffff'}`,
+  };
+
+  const buttonStyle = voiceStatus === 'listening'
+    ? { background: '#ef4444', color: '#fff', boxShadow: '0 0 28px rgba(239,68,68,0.45)', transform: 'scale(1.08)' }
     : voiceStatus === 'thinking'
-    ? 'bg-amber-500 text-white shadow-[0_0_32px_rgba(245,158,11,0.4)]'
-    : 'bg-gradient-to-br from-[#1e6ef4] to-[#4f46e5] text-white hover:scale-105 active:scale-95 shadow-[0_0_28px_rgba(30,110,244,0.4)]';
+    ? { background: '#f59e0b', color: '#fff', boxShadow: '0 0 28px rgba(245,158,11,0.4)' }
+    : voiceStatus === 'speaking'
+    ? { background: 'linear-gradient(135deg,#1e6ef4,#4f46e5)', color: '#fff', boxShadow: '0 0 28px rgba(30,110,244,0.4)' }
+    : { background: nm.bg, color: '#1e6ef4', boxShadow: nm.raised(8) };
 
-  const pingColor = voiceStatus === 'listening' ? 'bg-red-500' : 'bg-[#1e6ef4]';
+  const pingColor = voiceStatus === 'listening' ? 'bg-red-400' : 'bg-[#1e6ef4]';
 
-  const statusColor = voiceStatus === 'listening' ? 'text-red-500'
-    : voiceStatus === 'speaking' ? 'text-[#1e6ef4]'
-    : voiceStatus === 'thinking' ? 'text-amber-500'
-    : 'text-black/35 dark:text-white/35';
+  const statusColor = voiceStatus === 'listening' ? '#ef4444'
+    : voiceStatus === 'speaking' ? '#1e6ef4'
+    : voiceStatus === 'thinking' ? '#f59e0b'
+    : isDark ? '#38384a' : '#bbb';
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-[#f6f6f7] dark:bg-[#0a0a0a] p-6 gap-5">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6" style={{ background: nm.bg }}>
+
+      {/* Avatar */}
+      <div className="w-[52px] h-[52px] rounded-[14px] overflow-hidden" style={{ boxShadow: nm.raised(4) }}>
+        <img src="/images/avatar-hero.png" alt="Ramanathan" className="w-full h-full object-cover object-top" />
+      </div>
+
       {/* Mic button with pulse rings */}
       <div className="relative">
         {isActive && (
           <>
-            <div className={`absolute -inset-6 rounded-full animate-ping opacity-20 ${pingColor}`} style={{ animationDuration: '2s' }} />
-            <div className={`absolute -inset-3 rounded-full animate-ping opacity-30 ${pingColor}`} style={{ animationDuration: '1.5s' }} />
+            <div className={`absolute -inset-6 rounded-full animate-ping opacity-15 ${pingColor}`} style={{ animationDuration: '2s' }} />
+            <div className={`absolute -inset-3 rounded-full animate-ping opacity-25 ${pingColor}`} style={{ animationDuration: '1.5s' }} />
           </>
         )}
         <button
           onClick={onToggle}
-          className={`relative z-10 w-[80px] h-[80px] rounded-full flex items-center justify-center transition-all duration-300 ${buttonClass}`}
+          className="relative z-10 w-[76px] h-[76px] rounded-full flex items-center justify-center transition-all duration-300"
+          style={buttonStyle}
         >
           {voiceStatus === 'listening' && <MicIcon />}
           {voiceStatus === 'thinking' && <WaveBars />}
@@ -85,14 +104,14 @@ export default function VoiceMode({ voiceStatus, lastBotResponse, onToggle }: Vo
       </div>
 
       {/* Status label */}
-      <p className={`text-[12px] font-semibold tracking-wide uppercase ${statusColor}`}>
+      <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: statusColor }}>
         {STATUS_TEXT[voiceStatus]}
       </p>
 
       {/* Last bot response */}
       {lastBotResponse && (
-        <div className="w-full bg-white dark:bg-[#1c1c1e] rounded-[16px] p-[14px] border-l-2 border-[#1e6ef4] shadow-sm">
-          <p className="text-[11px] md:text-[12px] text-black/60 dark:text-white/60 leading-[165%]">
+        <div className="w-full rounded-[14px] px-[14px] py-[12px]" style={{ background: nm.bg, boxShadow: nm.inset(4), borderLeft: '3px solid #1e6ef4' }}>
+          <p className="text-[11px] md:text-[12px] leading-[165%]" style={{ color: nm.text }}>
             {lastBotResponse}
           </p>
         </div>
