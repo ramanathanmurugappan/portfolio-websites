@@ -826,3 +826,12 @@
   background: rgba(30, 110, 244, 0.45);
 }
 
+/* ── 10. Constellation TechStack — theme-aware background ── */
+.constellation-bg {
+  background: var(--grey);
+  border: 1px solid var(--black-opacity-7);
+}
+.dark .constellation-bg {
+  background: var(--grey);
+  border: 1px solid var(--black-opacity-7);
+}

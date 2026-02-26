@@ -87,7 +87,7 @@ export default function Achievements() {
 
       {/* Publications Section */}
       <div className="flex flex-col gap-[20px] mt-[20px]">
-        <h3 className="text-[24px] leading-[116%] tracking-[-0.02em] font-semibold text-center">
+        <h3 className="text-[24px] leading-[116%] tracking-[-0.02em] font-semibold text-center text-black dark:text-white">
           📄 Research Publications
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">

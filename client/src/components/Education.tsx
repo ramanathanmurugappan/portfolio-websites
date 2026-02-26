@@ -16,7 +16,7 @@ export default function Education() {
           <span className="inline-flex px-[12px] py-[6px] rounded-[10px] bg-white dark:bg-[#0f0f0f] text-[11px] tracking-[0.02em] font-semibold w-fit subtle-border">
             🎓 2018 - 2020
           </span>
-          <h3 className="text-[28px] leading-[116%] tracking-[-0.02em] font-semibold">
+          <h3 className="text-[28px] leading-[116%] tracking-[-0.02em] font-semibold text-black dark:text-white">
             M.E. Mechatronics
           </h3>
           <p className="text-[14px] text-black/50 dark:text-white/50 font-semibold">
@@ -29,7 +29,7 @@ export default function Education() {
           <span className="text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
             🔬 Research Experience
           </span>
-          <h4 className="text-[16px] font-semibold">
+          <h4 className="text-[16px] font-semibold text-black dark:text-white">
             Solarillion Foundation (SF)
           </h4>
           <p className="text-[12px] text-black/50 dark:text-white/50 font-semibold">

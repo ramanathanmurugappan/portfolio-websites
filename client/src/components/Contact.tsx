@@ -4,21 +4,23 @@
  * Modernized: Framer Motion whileInView reveals + shimmer buttons
  */
 
+import React from 'react';
 import { motion } from 'framer-motion';
+import { Smartphone } from 'lucide-react';
 import { socialLinks } from '../data/socialLinks';
 import MagneticButton from './MagneticButton';
 
 // ── ContactCard ──────────────────────────────────────────────────────────────
 
 interface ContactCardProps {
-  icon: string;
+  iconElement: React.ReactNode;
   label: string;
   value: string;
   href?: string;
   delay: number;
 }
 
-function ContactCard({ icon, label, value, href, delay }: ContactCardProps) {
+function ContactCard({ iconElement, label, value, href, delay }: ContactCardProps) {
   const motionProps = {
     initial: { opacity: 0, y: 24 },
     whileInView: { opacity: 1, y: 0 },
@@ -29,7 +31,7 @@ function ContactCard({ icon, label, value, href, delay }: ContactCardProps) {
 
   const inner = (
     <>
-      <span className="text-[24px] mb-[4px]">{icon}</span>
+      <span className="mb-[4px] flex items-center justify-center w-[32px] h-[32px]">{iconElement}</span>
       <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
         {label}
       </span>
@@ -48,9 +50,18 @@ function ContactCard({ icon, label, value, href, delay }: ContactCardProps) {
 // ── Contact data ─────────────────────────────────────────────────────────────
 
 const CONTACT_CARDS: ContactCardProps[] = [
-  { icon: '📧', label: 'Email',    value: 'ramanathanmurugappan29@gmail.com', href: 'mailto:ramanathanmurugappan29@gmail.com', delay: 0 },
-  { icon: '📱', label: 'Phone',    value: '+91 99 444 66 701',                href: 'tel:+919944466701',                       delay: 0.07 },
-  { icon: '📍', label: 'Location', value: 'Bengaluru, India',                                                                  delay: 0.14 },
+  {
+    iconElement: <img src="/images/tech-logos/gmail.svg" alt="Gmail" className="w-[28px] h-[28px] object-contain dark:invert" />,
+    label: 'Email', value: 'ramanathanmurugappan29@gmail.com', href: 'mailto:ramanathanmurugappan29@gmail.com', delay: 0,
+  },
+  {
+    iconElement: <Smartphone size={28} strokeWidth={1.5} className="text-black/70 dark:text-white/70" />,
+    label: 'Phone', value: '+91 99 444 66 701', href: 'tel:+919944466701', delay: 0.07,
+  },
+  {
+    iconElement: <img src="/images/tech-logos/googlemaps.svg" alt="Google Maps" className="w-[28px] h-[28px] object-contain dark:invert" />,
+    label: 'Location', value: 'Bengaluru, India', delay: 0.14,
+  },
 ];
 
 // ── Component ────────────────────────────────────────────────────────────────
