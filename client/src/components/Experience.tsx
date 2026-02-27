@@ -39,7 +39,7 @@ export default function Experience() {
         <div className="flex flex-col md:flex-row rounded-[24px] overflow-hidden card-hover">
 
           {/* ── Left: company tab panel ── */}
-          <div className="md:w-[280px] flex-shrink-0 flex flex-col justify-between p-[24px]
+          <div className="md:w-[280px] flex-shrink-0 flex flex-col justify-between p-[16px] md:p-[24px]
                           border-b md:border-b-0 md:border-r border-black/[0.06] dark:border-white/[0.06]"
             style={{
               background: `linear-gradient(155deg, ${color}12 0%, ${color}04 100%)`,
@@ -100,7 +100,7 @@ export default function Experience() {
           <motion.div key={exp.company + '-detail'}
             initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="flex-1 p-[24px] md:p-[32px] flex flex-col gap-[20px]
+            className="flex-1 p-[16px] md:p-[32px] flex flex-col gap-[20px]
                        bg-white dark:bg-[#1a1a1a]">
 
             <p className="text-[10px] font-bold text-black/30 dark:text-white/30

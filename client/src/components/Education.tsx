@@ -16,8 +16,8 @@ export default function Education() {
     <div className="container flex flex-col gap-[40px]">
       <SectionHeader eyebrow="🎓 Education" title="Academic Background" />
 
-      <div className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[24px] md:p-[40px]
-                      flex flex-col md:flex-row items-start justify-between gap-[28px] card-hover">
+      <div className="rounded-[24px] md:rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[16px] md:p-[40px]
+                      flex flex-col md:flex-row items-start justify-between gap-[20px] md:gap-[28px] card-hover">
 
         {/* ── Left: Degree — enhanced ── */}
         <div className="flex flex-col gap-[20px] flex-1">
@@ -43,7 +43,7 @@ export default function Education() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.08, ease: 'easeOut' }}
           >
-            <h3 className="text-[26px] md:text-[30px] leading-[115%] tracking-[-0.025em]
+            <h3 className="text-[clamp(22px,5vw,30px)] leading-[115%] tracking-[-0.025em]
                            font-extrabold text-black dark:text-white animate-gradient-text"
               style={{
                 backgroundImage: 'linear-gradient(90deg, #1e6ef4 0%, #6366f1 50%, #1e6ef4 100%)',

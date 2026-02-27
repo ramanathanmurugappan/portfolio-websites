@@ -16,15 +16,15 @@ function HeroCard({ p }: { p: typeof projects[0] }) {
   const color = companyColor(p.company);
   return (
     <motion.div
-      className="rounded-[28px] overflow-hidden relative cursor-pointer"
-      style={{ minHeight: 340 }}
+      className="rounded-[24px] md:rounded-[28px] overflow-hidden relative cursor-pointer"
+      style={{ minHeight: 'clamp(220px, 55vw, 340px)' }}
       whileHover={{ scale: 1.005 }}
       transition={{ duration: 0.3 }}
     >
       <img
         src={p.image} alt={p.name} loading="lazy" decoding="async"
         className="w-full h-full object-cover absolute inset-0"
-        style={{ minHeight: 340 }}
+        style={{ minHeight: 'clamp(220px, 55vw, 340px)' }}
       />
       {/* gradient overlay — darker on left for text legibility */}
       <div
@@ -33,17 +33,17 @@ function HeroCard({ p }: { p: typeof projects[0] }) {
       />
 
       {/* content */}
-      <div className="absolute inset-0 flex flex-col justify-center p-[28px] md:p-[44px] max-w-[600px]">
+      <div className="absolute inset-0 flex flex-col justify-center p-[20px] md:p-[44px] max-w-[600px]">
         {/* company · period */}
         <span
-          className="text-[10px] font-bold uppercase tracking-[0.12em] mb-[10px]"
+          className="text-[10px] font-bold uppercase tracking-[0.12em] mb-[8px] md:mb-[10px]"
           style={{ color }}
         >
           {p.company} · {p.period}
         </span>
 
         {/* title */}
-        <h3 className="text-[22px] md:text-[30px] font-extrabold text-white leading-tight tracking-[-0.02em] mb-[10px]">
+        <h3 className="text-[clamp(18px,4vw,30px)] font-extrabold text-white leading-tight tracking-[-0.02em] mb-[8px] md:mb-[10px]">
           {p.name}
         </h3>
 

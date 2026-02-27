@@ -24,11 +24,11 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="mt-[80px] pb-[100px]">
+    <footer className="mt-[40px] md:mt-[80px] pb-[100px]">
       <div className="container">
-        <div className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[24px] md:p-[40px] subtle-border">
+        <div className="rounded-[24px] md:rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[16px] md:p-[40px] subtle-border">
           {/* Footer Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-[24px] md:gap-[40px]">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-[16px] md:gap-[40px]">
             {/* Brand Column */}
             <div className="col-span-2 md:col-span-1 flex flex-col gap-[12px]">
               <h3 className="text-[15px] md:text-[16px] font-semibold text-black dark:text-white">
@@ -122,8 +122,8 @@ export default function Footer() {
           </div>
 
           {/* Footer Bottom */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-[10px] mt-[24px] md:mt-[40px] pt-[20px] border-t border-black/[0.06] dark:border-white/[0.06]">
-            <div className="flex items-center gap-[16px]">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-[8px] mt-[16px] md:mt-[40px] pt-[16px] md:pt-[20px] border-t border-black/[0.06] dark:border-white/[0.06]">
+            <div className="flex items-center gap-[12px] md:gap-[16px]">
               <span className="text-[11px] text-black/35 dark:text-white/35 font-semibold">
                 © {currentYear}, Ramanathan Murugappan
               </span>
@@ -135,7 +135,7 @@ export default function Footer() {
             </div>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="text-[11px] text-black/35 dark:text-white/35 font-semibold hover:text-black dark:hover:text-white transition-colors duration-200"
+              className="px-[12px] py-[8px] text-[11px] text-black/35 dark:text-white/35 font-semibold hover:text-black dark:hover:text-white transition-colors duration-200 min-h-[44px] flex items-center"
             >
               Back to Top ↑
             </button>

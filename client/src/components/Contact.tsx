@@ -26,7 +26,7 @@ function ContactCard({ iconElement, label, value, href, delay }: ContactCardProp
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, margin: '-40px' },
     transition: { duration: 0.5, ease: 'easeOut' as const, delay },
-    className: 'group flex flex-col items-center gap-[6px] p-[20px] md:p-[28px] rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-center card-hover',
+    className: 'group flex flex-col items-center gap-[6px] p-[14px] sm:p-[20px] md:p-[28px] rounded-[20px] md:rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] text-center card-hover',
   };
 
   const inner = (
@@ -35,7 +35,7 @@ function ContactCard({ iconElement, label, value, href, delay }: ContactCardProp
       <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
         {label}
       </span>
-      <span className={`text-[14px] font-semibold text-black dark:text-white break-all ${href ? 'group-hover:text-[#1e6ef4] transition-colors duration-200' : ''}`}>
+      <span className={`text-[clamp(11px,2.5vw,14px)] font-semibold text-black dark:text-white break-all ${href ? 'group-hover:text-[#1e6ef4] transition-colors duration-200' : ''}`}>
         {value}
       </span>
     </>
@@ -83,7 +83,7 @@ export default function Contact() {
       </motion.div>
 
       {/* Contact Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-[14px]">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-[14px]">
         {CONTACT_CARDS.map((card) => (
           <ContactCard key={card.label} {...card} />
         ))}

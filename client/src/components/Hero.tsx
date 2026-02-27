@@ -75,7 +75,7 @@ function CounterStat({ value, suffix, label }: { value: number; suffix: string; 
   const { count, ref } = useCountUp(value, COUNTER_DURATION_MS);
   return (
     <div ref={ref} className="flex flex-col gap-[3px]">
-      <span className="text-[26px] md:text-[30px] font-bold tracking-[-0.03em] text-black dark:text-white tabular-nums leading-none">
+      <span className="text-[clamp(20px,4vw,30px)] font-bold tracking-[-0.03em] text-black dark:text-white tabular-nums leading-none">
         {count}{suffix}
       </span>
       <span className="text-[10px] text-black/40 dark:text-white/40 font-semibold uppercase tracking-[0.07em]">
@@ -224,7 +224,7 @@ export default function Hero() {
         </div>
 
         {/* Right — text content */}
-        <div className="flex-1 flex items-start md:items-center px-[28px] md:px-[56px] lg:px-[80px] pt-[8px] md:pt-0 pb-[48px] md:pb-0">
+        <div className="flex-1 flex items-start md:items-center px-[20px] md:px-[56px] lg:px-[80px] pt-[8px] md:pt-0 pb-[32px] md:pb-0">
           <div className="flex flex-col gap-[24px] md:gap-[28px] w-full max-w-[540px]">
 
             {/* Status pill */}
@@ -276,7 +276,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
-              className="text-[14px] md:text-[15px] text-black/55 dark:text-white/55 leading-[165%] font-medium"
+              className="text-[13px] md:text-[15px] text-black/55 dark:text-white/55 leading-[155%] md:leading-[165%] font-medium"
             >
               {BIO}
             </motion.p>
@@ -286,7 +286,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.62, ease: 'easeOut' }}
-              className="flex gap-[28px] md:gap-[36px] py-[4px] border-y border-black/[0.06] dark:border-white/[0.06]"
+              className="flex gap-[16px] sm:gap-[28px] md:gap-[36px] py-[4px] border-y border-black/[0.06] dark:border-white/[0.06]"
             >
               {STATS.map((stat) => (
                 <CounterStat key={stat.label} value={stat.value} suffix={stat.suffix} label={stat.label} />

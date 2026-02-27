@@ -60,7 +60,7 @@ export default function Home() {
       </section>
 
       {/* Main Content Sections */}
-      <div className="flex flex-col gap-[160px] pt-[80px] pb-[24px]">
+      <div className="flex flex-col gap-[80px] md:gap-[160px] pt-[40px] md:pt-[80px] pb-[24px]">
         {/* About Section - Bento Grid */}
         <section id="about">
           <AboutSection />
