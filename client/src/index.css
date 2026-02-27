@@ -232,10 +232,12 @@
   html {
     scroll-behavior: smooth;
     scrollbar-gutter: stable;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
-  
+
   body {
+    overflow-x: hidden;
+    max-width: 100%;
     font-family: 'Inter', sans-serif;
     font-weight: 600;
     font-size: 14px;

@@ -50,12 +50,13 @@ export default function Marquee({ badges, direction }: MarqueeProps) {
   const duplicatedBadges = [...badges, ...badges, ...badges, ...badges];
   
   return (
-    <div 
+    <div className="overflow-hidden w-full">
+    <div
       className={`flex items-center gap-[16px] ${
         direction === 'left' ? 'justify-start' : 'justify-end'
       }`}
     >
-      <div 
+      <div
         className={`flex items-center gap-[16px] ${
           direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right'
         }`}
@@ -64,6 +65,7 @@ export default function Marquee({ badges, direction }: MarqueeProps) {
           <BadgePill key={`${badge.text}-${index}`} {...badge} />
         ))}
       </div>
+    </div>
     </div>
   );
 }
