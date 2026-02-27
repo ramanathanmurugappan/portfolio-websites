@@ -236,8 +236,7 @@
   }
 
   body {
-    overflow-x: hidden;
-    max-width: 100%;
+    overflow-x: clip;
     font-family: 'Inter', sans-serif;
     font-weight: 600;
     font-size: 14px;

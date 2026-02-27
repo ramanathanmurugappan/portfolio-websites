@@ -51,60 +51,59 @@ export default function Home() {
       {/* Film grain texture overlay for depth */}
       <div className="grain-overlay" aria-hidden="true" />
 
-      {/* Theme Toggle Button */}
+      {/* Fixed elements — kept OUTSIDE the overflow wrapper so position:fixed is preserved */}
       <ThemeToggle />
-
-      {/* Hero Section */}
-      <section id="home">
-        <Hero />
-      </section>
-
-      {/* Main Content Sections */}
-      <div className="flex flex-col gap-[80px] md:gap-[160px] pt-[40px] md:pt-[80px] pb-[24px]">
-        {/* About Section - Bento Grid */}
-        <section id="about">
-          <AboutSection />
-        </section>
-
-        {/* Experience Timeline */}
-        <section id="experience">
-          <Experience />
-        </section>
-
-        {/* Projects Section */}
-        <section id="works">
-          <Projects />
-        </section>
-
-        {/* Tech Stack Section */}
-        <section id="tech-stack">
-          <TechStack />
-        </section>
-
-        {/* Education Section */}
-        <section>
-          <Education />
-        </section>
-
-        {/* Achievements Section */}
-        <section>
-          <Achievements />
-        </section>
-
-        {/* Contact Section */}
-        <section id="contact">
-          <Contact />
-        </section>
-      </div>
-
-      {/* Footer */}
-      <Footer />
-
-      {/* Fixed Bottom Navigation */}
       <Navigation activeSection={activeSection} isChatOpen={isChatOpen} onChatToggle={setIsChatOpen} />
-
-      {/* Chatbot */}
       <Chatbot isOpen={isChatOpen} onToggle={setIsChatOpen} />
+
+      {/* Scrollable content — clipped to viewport width to prevent horizontal panning */}
+      <div style={{ overflowX: 'hidden' }}>
+        {/* Hero Section */}
+        <section id="home">
+          <Hero />
+        </section>
+
+        {/* Main Content Sections */}
+        <div className="flex flex-col gap-[80px] md:gap-[160px] pt-[40px] md:pt-[80px] pb-[24px]">
+          {/* About Section - Bento Grid */}
+          <section id="about">
+            <AboutSection />
+          </section>
+
+          {/* Experience Timeline */}
+          <section id="experience">
+            <Experience />
+          </section>
+
+          {/* Projects Section */}
+          <section id="works">
+            <Projects />
+          </section>
+
+          {/* Tech Stack Section */}
+          <section id="tech-stack">
+            <TechStack />
+          </section>
+
+          {/* Education Section */}
+          <section>
+            <Education />
+          </section>
+
+          {/* Achievements Section */}
+          <section>
+            <Achievements />
+          </section>
+
+          {/* Contact Section */}
+          <section id="contact">
+            <Contact />
+          </section>
+        </div>
+
+        {/* Footer */}
+        <Footer />
+      </div>
     </div>
   );
 }
