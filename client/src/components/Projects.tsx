@@ -115,7 +115,7 @@ function GridCard({ p, index }: { p: typeof projects[0]; index: number }) {
         <div className="flex flex-wrap gap-[3px] mt-[6px]">
           {p.techStack.map(t => (
             <span key={t}
-              className="text-[8px] font-semibold px-[6px] py-[2px] rounded-full bg-white dark:bg-[#222] subtle-border text-black/45 dark:text-white/45">
+              className="text-[8px] font-semibold px-[6px] py-[2px] rounded-full bg-white dark:bg-[#252525] subtle-border text-black/45 dark:text-white/45">
               {t}
             </span>
           ))}

@@ -18,7 +18,7 @@ export default function SectionHeader({ eyebrow, title, centered }: SectionHeade
       <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
         {eyebrow}
       </span>
-      <h2 className="text-[clamp(28px,4vw,40px)] leading-[116%] tracking-[-0.02em] font-semibold">
+      <h2 className="text-[clamp(28px,4vw,44px)] font-semibold">
         {title}
       </h2>
     </motion.div>

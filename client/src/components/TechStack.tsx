@@ -97,7 +97,7 @@ function MobileTechGrid() {
             <div className="flex flex-wrap gap-[6px]">
               {cat.items.map((tech) => (
                 <div key={tech.name}
-                  className="flex items-center gap-[6px] px-[10px] py-[6px] rounded-[10px] bg-white dark:bg-[#111]"
+                  className="flex items-center gap-[6px] px-[10px] py-[6px] rounded-[10px] bg-white dark:bg-[#252525]"
                   style={{ border: `1px solid ${color}25` }}>
                   {tech.isImage ? (
                     <img src={tech.icon} alt={tech.name}

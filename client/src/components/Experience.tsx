@@ -101,7 +101,7 @@ export default function Experience() {
             initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="flex-1 p-[24px] md:p-[32px] flex flex-col gap-[20px]
-                       bg-white dark:bg-[#111]">
+                       bg-white dark:bg-[#1a1a1a]">
 
             <p className="text-[10px] font-bold text-black/30 dark:text-white/30
                           uppercase tracking-[0.1em]">

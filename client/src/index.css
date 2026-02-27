@@ -94,6 +94,9 @@
   --radius-max: 1000px;
   
   /* Typography Sizes — fluid with clamp() for responsive elegance */
+  --font-size-xxs: 10px;       /* micro-labels, period badges, tiny indicators */
+  --font-size-label: 11px;     /* section eyebrows, copyright, meta text */
+  --font-size-body-sm: 13px;   /* secondary body, footer links, sub-descriptions */
   --font-size-xs: 12px;
   --font-size-s: 14px;
   --font-size-m: 24px;
@@ -309,6 +312,14 @@
     min-width: 0;
   }
   
+  /* Typography utility — consistent eyebrow/label pattern across all sections */
+  .text-eyebrow {
+    font-size: var(--font-size-label);
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
   @media (max-width: 767px) {
     .container {
       padding-left: 20px;
