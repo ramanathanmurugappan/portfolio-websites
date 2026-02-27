@@ -5,6 +5,7 @@
 
 import { motion } from 'framer-motion';
 import SectionHeader from './SectionHeader';
+import ScrollReveal from './ScrollReveal';
 
 const COURSEWORK = [
   'Machine Learning', 'Deep Learning', 'Control Systems',
@@ -93,13 +94,10 @@ export default function Education() {
         </div>
 
         {/* ── Right: Research card — original style ── */}
-        <motion.div
+        <ScrollReveal
           className="rounded-[24px] bg-white dark:bg-[#0f0f0f] p-[20px] md:p-[24px]
                      flex flex-col gap-[8px] w-full md:max-w-[400px] flex-shrink-0 card-hover"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+          delay={0.2}
         >
           <span className="text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
             🔬 Research Experience
@@ -113,7 +111,7 @@ export default function Education() {
           <p className="text-[12px] text-black/60 dark:text-white/60">
             Published 2 papers at IEEE and FICC conferences on ML applications
           </p>
-        </motion.div>
+        </ScrollReveal>
 
       </div>
     </div>

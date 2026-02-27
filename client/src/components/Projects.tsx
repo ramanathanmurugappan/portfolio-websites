@@ -7,6 +7,7 @@
 
 import { motion } from 'framer-motion';
 import SectionHeader from './SectionHeader';
+import ScrollReveal from './ScrollReveal';
 import { projects } from '../data/projects';
 import { companyColor } from '../data/brandColors';
 
@@ -75,12 +76,9 @@ function HeroCard({ p }: { p: typeof projects[0] }) {
 function GridCard({ p, index }: { p: typeof projects[0]; index: number }) {
   const color = companyColor(p.company);
   return (
-    <motion.div
+    <ScrollReveal
       className="rounded-[20px] overflow-hidden bg-[#f7f7f7] dark:bg-[#1a1a1a] card-hover flex flex-col"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-30px' }}
-      transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
+      duration={0.4} delay={index * 0.05} margin="-30px"
     >
       {/* image */}
       <div className="relative h-[130px] flex-shrink-0 overflow-hidden">
@@ -121,7 +119,7 @@ function GridCard({ p, index }: { p: typeof projects[0]; index: number }) {
           ))}
         </div>
       </div>
-    </motion.div>
+    </ScrollReveal>
   );
 }
 
@@ -136,14 +134,9 @@ export default function Projects() {
       <SectionHeader eyebrow="💻 Projects" title="Featured Work" />
 
       {/* Hero */}
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-      >
+      <ScrollReveal y={24}>
         <HeroCard p={hero} />
-      </motion.div>
+      </ScrollReveal>
 
       {/* 3-col grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[12px]">

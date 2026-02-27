@@ -85,6 +85,20 @@ function CounterStat({ value, suffix, label }: { value: number; suffix: string; 
   );
 }
 
+// ── MarqueeEdgeFade ───────────────────────────────────────────────────────────
+
+function MarqueeEdgeFade({ side }: { side: 'left' | 'right' }) {
+  const deg = side === 'left' ? '90deg' : '270deg';
+  return (
+    <div className={`absolute ${side}-0 top-0 bottom-0 w-[160px] z-10 pointer-events-none`}
+      style={{
+        maskImage: `linear-gradient(${deg}, black 50%, transparent 100%)`,
+        WebkitMaskImage: `linear-gradient(${deg}, black 50%, transparent 100%)`,
+        background: `linear-gradient(${deg}, var(--white) 0%, transparent 100%)`,
+      }} />
+  );
+}
+
 // ── Marquee data ──────────────────────────────────────────────────────────────
 
 const DOT = <span className="text-black/20 dark:text-white/20 text-[13px] font-bold">✦</span>;
@@ -301,20 +315,8 @@ export default function Hero() {
       <div className="flex flex-col gap-[16px] relative overflow-hidden py-[12px]">
 
         {/* Edge fades */}
-        <div className="absolute left-0 top-0 bottom-0 w-[160px] z-10 pointer-events-none"
-          style={{
-            maskImage: 'linear-gradient(90deg, black 50%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(90deg, black 50%, transparent 100%)',
-            background: 'linear-gradient(90deg, var(--white) 0%, transparent 100%)',
-          }}
-        />
-        <div className="absolute right-0 top-0 bottom-0 w-[160px] z-10 pointer-events-none"
-          style={{
-            maskImage: 'linear-gradient(270deg, black 50%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(270deg, black 50%, transparent 100%)',
-            background: 'linear-gradient(270deg, var(--white) 0%, transparent 100%)',
-          }}
-        />
+        <MarqueeEdgeFade side="left" />
+        <MarqueeEdgeFade side="right" />
 
         {/* Row 1 — D: Bold news ticker (left) */}
         <div className="overflow-hidden border-y border-black/[0.05] dark:border-white/[0.05] py-[10px]">

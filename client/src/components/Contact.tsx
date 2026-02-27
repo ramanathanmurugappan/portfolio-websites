@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { Smartphone } from 'lucide-react';
 import { socialLinks } from '../data/socialLinks';
 import MagneticButton from './MagneticButton';
+import ScrollReveal from './ScrollReveal';
 
 // ── ContactCard ──────────────────────────────────────────────────────────────
 
@@ -69,17 +70,11 @@ export default function Contact() {
   return (
     <div className="container flex flex-col gap-[40px]">
       {/* Section Header */}
-      <motion.div
-        className="flex flex-col items-center text-center gap-[20px]"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-      >
+      <ScrollReveal className="flex flex-col items-center text-center gap-[20px]">
         <h2 className="text-[clamp(20px,3vw,24px)] leading-[116%] tracking-[-0.02em] font-semibold">
           📬 Get In Touch
         </h2>
-      </motion.div>
+      </ScrollReveal>
 
       {/* Contact Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[14px]">
@@ -89,13 +84,7 @@ export default function Contact() {
       </div>
 
       {/* Social Links */}
-      <motion.div
-        className="flex justify-center gap-[12px] flex-wrap"
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.5, ease: 'easeOut', delay: 0.2 }}
-      >
+      <ScrollReveal className="flex justify-center gap-[12px] flex-wrap" y={16} delay={0.2}>
         {socialLinks.map((link) => (
           <MagneticButton key={link.label}>
             <a
@@ -108,7 +97,7 @@ export default function Contact() {
             </a>
           </MagneticButton>
         ))}
-      </motion.div>
+      </ScrollReveal>
     </div>
   );
 }

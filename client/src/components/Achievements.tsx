@@ -8,6 +8,20 @@ import { motion } from 'framer-motion';
 import SectionHeader from './SectionHeader';
 import { achievements, publications } from '../data/achievements';
 
+// ── AvatarBox ─────────────────────────────────────────────────────────────────
+
+function AvatarBox({ src, position }: { src: string; position: 'left' | 'right' }) {
+  const edge = position === 'left' ? '-ml-[4px] md:-ml-[10px]' : '-mr-[4px] md:-mr-[10px]';
+  return (
+    <div className={`w-[90px] h-[90px] md:w-[140px] md:h-[140px] flex-shrink-0 ${edge} rounded-[16px] md:rounded-[20px] overflow-hidden bg-[#E8E0F0] dark:bg-[#2D1F45]`}>
+      <img src={src} alt="Ramanathan" loading="lazy" decoding="async"
+        className="w-full h-full object-contain img-transition" />
+    </div>
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function Achievements() {
   return (
     <div className="container flex flex-col gap-[40px]">
@@ -15,78 +29,47 @@ export default function Achievements() {
 
       {/* Achievement Cards */}
       <div className="flex flex-col gap-[14px]">
-        {achievements.map((achievement, idx) => (
-          <motion.div
-            key={achievement.title}
-            initial={{ opacity: 0, x: idx % 2 === 0 ? -24 : 24 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.55, ease: 'easeOut', delay: idx * 0.07 }}
-            className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[20px] md:p-[40px] flex items-center justify-between min-h-[120px] md:min-h-[160px] relative overflow-hidden achievement-card subtle-border"
-          >
-            {/* Avatar on Left */}
-            {achievement.memojiPosition === 'left' && (
-              <div className="w-[90px] h-[90px] md:w-[140px] md:h-[140px] flex-shrink-0 -ml-[4px] md:-ml-[10px] rounded-[16px] md:rounded-[20px] overflow-hidden bg-[#E8E0F0] dark:bg-[#2D1F45]">
-                <img
-                  src={achievement.memojiImage}
-                  alt="Ramanathan"
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-contain img-transition"
-                />
-              </div>
-            )}
+        {achievements.map((a, idx) => {
+          const isLeft = a.memojiPosition === 'left';
+          const ml = isLeft ? 'auto' : '0';
+          return (
+            <motion.div
+              key={a.title}
+              initial={{ opacity: 0, x: idx % 2 === 0 ? -24 : 24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.55, ease: 'easeOut', delay: idx * 0.07 }}
+              className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[20px] md:p-[40px] flex items-center justify-between min-h-[120px] md:min-h-[160px] relative overflow-hidden achievement-card subtle-border"
+            >
+              {isLeft && <AvatarBox src={a.memojiImage} position="left" />}
 
-            {/* Stats */}
-            <div className={`flex flex-col gap-[6px] flex-1 ${
-              achievement.memojiPosition === 'left' ? 'text-right pr-[40px]' : 'text-left pl-[40px]'
-            }`}>
-              {achievement.highlight && (
-                <span
-                  className="inline-flex px-[10px] py-[4px] rounded-[8px] bg-white dark:bg-[#0f0f0f] text-[10px] tracking-[0.02em] font-semibold w-fit mb-[4px] subtle-border"
-                  style={{
-                    marginLeft: achievement.memojiPosition === 'left' ? 'auto' : '0'
-                  }}
-                >
-                  {achievement.highlight}
+              <div className={`flex flex-col gap-[6px] flex-1 ${isLeft ? 'text-right pr-[40px]' : 'text-left pl-[40px]'}`}>
+                {a.highlight && (
+                  <span className="inline-flex px-[10px] py-[4px] rounded-[8px] bg-white dark:bg-[#0f0f0f] text-[10px] tracking-[0.02em] font-semibold w-fit mb-[4px] subtle-border"
+                    style={{ marginLeft: ml }}>
+                    {a.highlight}
+                  </span>
+                )}
+                <span className="text-[24px] md:text-[36px] leading-[100%] tracking-[-0.03em] font-semibold text-black dark:text-white">
+                  {a.title}
                 </span>
-              )}
-              <span className="text-[24px] md:text-[36px] leading-[100%] tracking-[-0.03em] font-semibold text-black dark:text-white">
-                {achievement.title}
-              </span>
-              <span
-                className="text-[13px] text-black/50 dark:text-white/50 font-semibold max-w-[400px]"
-                style={{ marginLeft: achievement.memojiPosition === 'left' ? 'auto' : '0' }}
-              >
-                {achievement.description}
-              </span>
-              {achievement.link && (
-                <a
-                  href={achievement.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-[#1e6ef4] font-semibold mt-[4px] hover:underline"
-                  style={{ marginLeft: achievement.memojiPosition === 'left' ? 'auto' : '0' }}
-                >
-                  View LinkedIn Post →
-                </a>
-              )}
-            </div>
-
-            {/* Avatar on Right */}
-            {achievement.memojiPosition === 'right' && (
-              <div className="w-[90px] h-[90px] md:w-[140px] md:h-[140px] flex-shrink-0 -mr-[4px] md:-mr-[10px] rounded-[16px] md:rounded-[20px] overflow-hidden bg-[#E8E0F0] dark:bg-[#2D1F45]">
-                <img
-                  src={achievement.memojiImage}
-                  alt="Ramanathan"
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-contain img-transition"
-                />
+                <span className="text-[13px] text-black/50 dark:text-white/50 font-semibold max-w-[400px]"
+                  style={{ marginLeft: ml }}>
+                  {a.description}
+                </span>
+                {a.link && (
+                  <a href={a.link} target="_blank" rel="noopener noreferrer"
+                    className="text-[11px] text-[#1e6ef4] font-semibold mt-[4px] hover:underline"
+                    style={{ marginLeft: ml }}>
+                    View LinkedIn Post →
+                  </a>
+                )}
               </div>
-            )}
-          </motion.div>
-        ))}
+
+              {!isLeft && <AvatarBox src={a.memojiImage} position="right" />}
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Publications Section */}
@@ -95,16 +78,13 @@ export default function Achievements() {
           📄 Research Publications
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">
-          {publications.map((pub, index) => (
+          {publications.map((pub, i) => (
             <motion.a
-              key={index}
-              href={pub.link}
-              target="_blank"
-              rel="noopener noreferrer"
+              key={i} href={pub.link} target="_blank" rel="noopener noreferrer"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, ease: 'easeOut', delay: index * 0.1 }}
+              transition={{ duration: 0.5, ease: 'easeOut', delay: i * 0.1 }}
               className="rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col gap-[12px] card-hover group"
             >
               <span className="text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
@@ -113,12 +93,8 @@ export default function Achievements() {
               <h4 className="text-[14px] leading-[140%] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200 text-black dark:text-white">
                 {pub.title}
               </h4>
-              <span className="text-[12px] text-black/35 dark:text-white/35 font-semibold">
-                {pub.venue}
-              </span>
-              <span className="text-[11px] text-[#1e6ef4] font-semibold mt-auto">
-                Read Paper →
-              </span>
+              <span className="text-[12px] text-black/35 dark:text-white/35 font-semibold">{pub.venue}</span>
+              <span className="text-[11px] text-[#1e6ef4] font-semibold mt-auto">Read Paper →</span>
             </motion.a>
           ))}
         </div>
