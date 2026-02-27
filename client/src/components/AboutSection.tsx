@@ -142,7 +142,7 @@ function FlipCard({ card, index }: { card: CardData; index: number }) {
       return (
         <img
           src={card.src}
-          alt=""
+          alt={card.question}
           className="w-full h-full object-cover object-top"
           loading="lazy"
           decoding="async"
@@ -155,7 +155,7 @@ function FlipCard({ card, index }: { card: CardData; index: number }) {
         {card.logos.map((l, i) => (
           <div key={i} className="flex items-center justify-center rounded-[10px]"
             style={{ background: `${card.color}12` }}>
-            <img src={l.src} alt=""
+            <img src={l.src} alt="" aria-hidden="true"
               className={`w-[26px] h-[26px] object-contain opacity-75 ${l.invert ? 'brightness-0 dark:invert' : ''}`} />
           </div>
         ))}

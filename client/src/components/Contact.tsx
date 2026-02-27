@@ -4,7 +4,6 @@
  * Modernized: Framer Motion whileInView reveals + shimmer buttons
  */
 
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Smartphone } from 'lucide-react';
 import { socialLinks } from '../data/socialLinks';

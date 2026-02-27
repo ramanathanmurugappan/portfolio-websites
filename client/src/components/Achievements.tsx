@@ -30,6 +30,8 @@ export default function Achievements() {
                 <img
                   src={achievement.memojiImage}
                   alt="Ramanathan"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-contain img-transition"
                 />
               </div>
@@ -77,6 +79,8 @@ export default function Achievements() {
                 <img
                   src={achievement.memojiImage}
                   alt="Ramanathan"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-contain img-transition"
                 />
               </div>
