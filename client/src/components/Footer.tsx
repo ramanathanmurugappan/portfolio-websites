@@ -40,8 +40,8 @@ export default function Footer() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     fetch('https://api.counterapi.dev/v1/ram96com/visits/up', { signal: controller.signal })
-      .then(r => r.json())
-      .then(data => { if (data?.count) setVisitCount(data.count); })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => { if (typeof data?.count === 'number') setVisitCount(data.count); })
       .catch(() => {})
       .finally(() => clearTimeout(timeout));
     return () => controller.abort();
