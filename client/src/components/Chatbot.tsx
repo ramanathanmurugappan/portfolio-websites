@@ -51,7 +51,7 @@ function SendSVG() {
 function BotAvatar({ shadow }: { shadow: string }) {
   return (
     <div className="w-[26px] h-[26px] rounded-[8px] overflow-hidden flex-shrink-0" style={{ boxShadow: shadow }}>
-      <img src="/images/avatar-hero.png" alt="Ramanathan" className="w-full h-full object-cover object-top" />
+      <img src="/images/avatar-hero.jpg" alt="Ramanathan" className="w-full h-full object-cover object-top" />
     </div>
   );
 }
@@ -301,7 +301,7 @@ function Header({ nm, chatMode, onModeChange, onClose }: HeaderProps) {
       <div className="flex items-center gap-[10px]">
         <div className="relative flex-shrink-0">
           <div className="w-[36px] h-[36px] rounded-[10px] overflow-hidden" style={{ boxShadow: nm.raised(3) }}>
-            <img src="/images/avatar-hero.png" alt="Ramanathan" className="w-full h-full object-cover object-top" />
+            <img src="/images/avatar-hero.jpg" alt="Ramanathan" className="w-full h-full object-cover object-top" />
           </div>
           <div className="absolute -bottom-[2px] -right-[2px] w-[9px] h-[9px] rounded-full bg-[#35c759]" style={{ border: `2px solid ${nm.bg}` }} />
         </div>

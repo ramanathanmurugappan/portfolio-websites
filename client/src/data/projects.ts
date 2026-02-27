@@ -25,7 +25,7 @@ export const projects: Project[] = [
     ],
     techStack: ['Docling', 'OpenSearch', 'Open WebUI', 'DeepEval', 'LangSmith', 'Langfuse'],
     skills: 'Agentic RAG · Multi-Vector · Hybrid Search · Observability · LLM Eval',
-    image: '/images/project-hr-rag.png',
+    image: '/images/project-hr-rag.jpg',
   },
   {
     id: 2,
@@ -39,7 +39,7 @@ export const projects: Project[] = [
     ],
     techStack: ['MCP', 'Multi-Agent Systems', 'LangGraph', 'ServiceNow'],
     skills: 'Agentic Orchestration · MCP · Dynamic Routing · LangGraph · ITSM Automation',
-    image: '/images/project-servicenow.png',
+    image: '/images/project-servicenow.jpg',
   },
   {
     id: 3,
@@ -53,7 +53,7 @@ export const projects: Project[] = [
     ],
     techStack: ['SAM', 'Clip-ViT-B', 'Qdrant', 'Python'],
     skills: 'Visual Search · Semantic Embeddings · Vector DB · SAM · CLIP',
-    image: '/images/project-retail-lens.png',
+    image: '/images/project-retail-lens.jpg',
   },
   {
     id: 4,
@@ -67,7 +67,7 @@ export const projects: Project[] = [
     ],
     techStack: ['RAG', 'LLM', 'Streamlit', 'Excel/CSV Integration'],
     skills: 'GenAI · RAG · LLM Chat · Predictive Modelling · Clinical AI',
-    image: '/images/project-asthma.png',
+    image: '/images/project-asthma.jpg',
   },
   {
     id: 5,
@@ -81,7 +81,7 @@ export const projects: Project[] = [
     ],
     techStack: ['Python', 'Web Scraping', 'Segmentation', 'Profiling'],
     skills: 'Fee Optimization · Customer Segmentation · Pricing Strategy · Profiling · Web Scraping',
-    image: '/images/project-fee-optimize.png',
+    image: '/images/project-fee-optimize.jpg',
   },
   {
     id: 6,
@@ -95,7 +95,7 @@ export const projects: Project[] = [
     ],
     techStack: ['Bagging', 'Boosting', 'Python', 'Risk Analysis'],
     skills: 'Credit Scoring · Ensemble Learning · Bagging · Boosting · Financial Inclusion',
-    image: '/images/project-credit-risk.png',
+    image: '/images/project-credit-risk.jpg',
   },
   {
     id: 7,
@@ -109,7 +109,7 @@ export const projects: Project[] = [
     ],
     techStack: ['RandomForest', 'LightGBM', 'GridSearchCV', 'Python'],
     skills: 'Payment Prediction · Call Center Ops · LightGBM · Hyperparameter Tuning · Churn',
-    image: '/images/project-payment-predict.png',
+    image: '/images/project-payment-predict.jpg',
   },
   {
     id: 8,
@@ -123,6 +123,6 @@ export const projects: Project[] = [
     ],
     techStack: ['Python', 'Machine Learning', 'Classification', 'Regression'],
     skills: 'Two-Stage ML · Delay Classification · Duration Regression · Weather Features',
-    image: '/images/project-flight-delay.png',
+    image: '/images/project-flight-delay.jpg',
   },
 ];

@@ -19,6 +19,7 @@ function CompanyLogo({ company, size = 40 }: { company: string; size?: number })
       overflow: 'hidden', flexShrink: 0, boxShadow: `0 2px 8px ${color}18`,
     }}>
       <img src={COMPANY_LOGOS[company]} alt={company}
+        loading="lazy" decoding="async"
         style={{ width: '82%', height: '82%', objectFit: 'contain' }} />
     </div>
   );

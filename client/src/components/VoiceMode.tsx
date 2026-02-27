@@ -84,7 +84,7 @@ export default function VoiceMode({ voiceStatus, lastBotResponse, onToggle, isDa
 
       {/* Avatar */}
       <div className="w-[52px] h-[52px] rounded-[14px] overflow-hidden" style={{ boxShadow: nm.raised(4) }}>
-        <img src="/images/avatar-hero.png" alt="Ramanathan" className="w-full h-full object-cover object-top" />
+        <img src="/images/avatar-hero.jpg" alt="Ramanathan" className="w-full h-full object-cover object-top" />
       </div>
 
       {/* Mic button with pulse rings */}

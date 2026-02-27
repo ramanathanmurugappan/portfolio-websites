@@ -9,22 +9,52 @@ const W = 1120, H = 440, NR = 22;
 
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
+/**
+ * Drives the SVG pipeline animation.
+ * The rAF loop only runs while the component is mounted AND visible in the
+ * viewport — saves CPU/battery when the user hasn't scrolled here yet.
+ */
 function useAnimTime(speed = 0.32) {
-  const [t, setT] = useState(0);
-  const elapsed = useRef(0);
-  const lastTs  = useRef<number | null>(null);
+  const [t, setT]       = useState(0);
+  const elapsed         = useRef(0);
+  const lastTs          = useRef<number | null>(null);
+  const rafRef          = useRef<number | null>(null);
+  const containerRef    = useRef<HTMLDivElement>(null);
+  const visibleRef      = useRef(false);
+
   useEffect(() => {
-    let raf: number;
     const tick = (now: number) => {
       if (lastTs.current !== null) elapsed.current += (now - lastTs.current) / 1000 * speed;
       lastTs.current = now;
       setT(elapsed.current);
-      raf = requestAnimationFrame(tick);
+      rafRef.current = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+
+    const startLoop = () => {
+      if (rafRef.current) return; // already running
+      lastTs.current = null;      // reset timestamp so first tick is clean
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    const stopLoop = () => {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      lastTs.current = null;
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting) startLoop();
+        else stopLoop();
+      },
+      { threshold: 0.1 },
+    );
+
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => { stopLoop(); observer.disconnect(); };
   }, [speed]);
-  return t;
+
+  return { t, containerRef };
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -156,7 +186,7 @@ const shortLabel = (title: string) =>
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function TechStack() {
-  const t = useAnimTime();
+  const { t, containerRef } = useAnimTime();
   const [activeLayer, setActiveLayer] = useState<number | null>(null);
   const [tooltip, setTooltip] = useState<{ name: string; desc: string; color: string } | null>(null);
 
@@ -164,7 +194,7 @@ export default function TechStack() {
     activeLayer !== null && activeLayer !== li && activeLayer !== li + 1;
 
   return (
-    <div className="flex flex-col gap-[40px]">
+    <div ref={containerRef} className="flex flex-col gap-[40px]">
       <div className="container">
         <SectionHeader eyebrow="🛠️ Tech Stack" title="What I Use" />
       </div>

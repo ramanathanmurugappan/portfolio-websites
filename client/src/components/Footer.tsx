@@ -38,9 +38,11 @@ export default function Footer() {
                 I build enterprise-grade AI products
               </p>
               <div className="w-[72px] h-[72px] md:w-[100px] md:h-[100px] mt-[8px] md:mt-[12px]">
-                <img 
-                  src="/images/avatar-laptop.png" 
+                <img
+                  src="/images/avatar-laptop.jpg"
                   alt="Ramanathan with laptop"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-contain img-transition"
                 />
               </div>

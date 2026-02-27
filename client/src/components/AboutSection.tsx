@@ -22,21 +22,21 @@ type CardData = {
 
 const CARDS: CardData[] = [
   {
-    type: 'image', src: '/images/avatar-laptop-card.png',
+    type: 'image', src: '/images/avatar-laptop-card.jpg',
     question: 'What do I build?',
     answer: 'RAG Pipelines, Multi-Agent Systems & production LLM applications at enterprise scale.',
     color: '#1e6ef4',
     grad: 'linear-gradient(135deg, #1e6ef4 0%, #6366f1 100%)',
   },
   {
-    type: 'image', src: '/images/avatar-thinking-card.png',
+    type: 'image', src: '/images/avatar-thinking-card.jpg',
     question: 'How long have I been building AI?',
     answer: '6+ years since Dec 2019 — Kaleidofin → Accenture → ITC Infotech.',
     color: '#6366f1',
     grad: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
   },
   {
-    type: 'image', src: '/images/avatar-hero-card.png',
+    type: 'image', src: '/images/avatar-hero-card.jpg',
     question: 'Where am I based?',
     answer: 'Bengaluru, India. Available for remote work globally.',
     color: '#059669',
@@ -58,7 +58,7 @@ const CARDS: CardData[] = [
     grad: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
   },
   {
-    type: 'image', src: '/images/avatar-coding-card.png',
+    type: 'image', src: '/images/avatar-coding-card.jpg',
     question: 'Research output?',
     answer: '2 published papers on ML-based predictive modelling for financial inclusion at scale.',
     color: '#ea580c',

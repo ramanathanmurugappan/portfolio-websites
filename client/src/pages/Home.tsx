@@ -1,110 +1,140 @@
 /**
- * Bluren Portfolio Replica - Home Page
- * Design: Neo-Minimalist Personal Branding
- * Features: 3D Memoji avatars, infinite marquee, pastel badges, fixed bottom nav
+ * Home — main portfolio page.
+ *
+ * Performance strategy:
+ *  - Above-fold (Hero, Navigation, ThemeToggle, ScrollProgress) → eager import
+ *  - Everything else → React.lazy + Suspense so they're code-split into
+ *    separate chunks and only downloaded when the browser is idle /
+ *    the user scrolls toward them.
  */
 
-import { useState, useEffect } from 'react';
-import Navigation from '@/components/Navigation';
-import ThemeToggle from '@/components/ThemeToggle';
-import Hero from '@/components/Hero';
-import AboutSection from '@/components/AboutSection';
-import Projects from '@/components/Projects';
-import Experience from '@/components/Experience';
-import TechStack from '@/components/TechStack';
-import Achievements from '@/components/Achievements';
-import Education from '@/components/Education';
-import Contact from '@/components/Contact';
-import Footer from '@/components/Footer';
-import Chatbot from '@/components/Chatbot';
+import { useState, useEffect, lazy, Suspense } from 'react';
+
+// ── Above-fold: eager ─────────────────────────────────────────────────────────
+import Navigation    from '@/components/Navigation';
+import ThemeToggle   from '@/components/ThemeToggle';
+import Hero          from '@/components/Hero';
 import ScrollProgress from '@/components/ScrollProgress';
+
+// ── Below-fold: lazy (code-split) ────────────────────────────────────────────
+const AboutSection = lazy(() => import('@/components/AboutSection'));
+const Experience   = lazy(() => import('@/components/Experience'));
+const Projects     = lazy(() => import('@/components/Projects'));
+const TechStack    = lazy(() => import('@/components/TechStack'));
+const Education    = lazy(() => import('@/components/Education'));
+const Achievements = lazy(() => import('@/components/Achievements'));
+const Contact      = lazy(() => import('@/components/Contact'));
+const Footer       = lazy(() => import('@/components/Footer'));
+const Chatbot      = lazy(() => import('@/components/Chatbot'));
+
+// ── Skeleton fallback ─────────────────────────────────────────────────────────
+// Shown while a lazy chunk is downloading — matches section height so layout
+// doesn't shift when the real content arrives.
+function SectionSkeleton() {
+  return (
+    <div className="container">
+      <div className="animate-pulse space-y-4">
+        <div className="h-6 w-32 rounded-full bg-black/[0.06] dark:bg-white/[0.06]" />
+        <div className="h-10 w-64 rounded-xl  bg-black/[0.06] dark:bg-white/[0.06]" />
+        <div className="h-48 rounded-2xl      bg-black/[0.04] dark:bg-white/[0.04]" />
+      </div>
+    </div>
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('home');
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isChatOpen,    setIsChatOpen]    = useState(true);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['home', 'works', 'tech-stack', 'contact'];
-      const scrollPosition = window.scrollY + window.innerHeight / 3;
+    const sections = ['home', 'works', 'tech-stack', 'contact'];
 
-      for (const section of sections) {
-        const element = document.getElementById(section);
-        if (element) {
-          const { offsetTop, offsetHeight } = element;
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(section);
-            break;
-          }
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + window.innerHeight / 3;
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el && scrollPosition >= el.offsetTop && scrollPosition < el.offsetTop + el.offsetHeight) {
+          setActiveSection(id);
+          break;
         }
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
-      {/* Awwwards-style modernization layers */}
       <ScrollProgress />
-      {/* Film grain texture overlay for depth */}
       <div className="grain-overlay" aria-hidden="true" />
-
-      {/* Theme Toggle Button */}
       <ThemeToggle />
 
-      {/* Hero Section */}
+      {/* Hero — eager, above-fold */}
       <section id="home">
         <Hero />
       </section>
 
-      {/* Main Content Sections */}
+      {/* Below-fold sections — each wrapped in its own Suspense so one slow
+          chunk never blocks others from rendering */}
       <div className="flex flex-col gap-[160px] pt-[80px] pb-[24px]">
-        {/* About Section - Bento Grid */}
+
         <section id="about">
-          <AboutSection />
+          <Suspense fallback={<SectionSkeleton />}>
+            <AboutSection />
+          </Suspense>
         </section>
 
-        {/* Experience Timeline */}
         <section id="experience">
-          <Experience />
+          <Suspense fallback={<SectionSkeleton />}>
+            <Experience />
+          </Suspense>
         </section>
 
-        {/* Projects Section */}
         <section id="works">
-          <Projects />
+          <Suspense fallback={<SectionSkeleton />}>
+            <Projects />
+          </Suspense>
         </section>
 
-        {/* Tech Stack Section */}
         <section id="tech-stack">
-          <TechStack />
+          <Suspense fallback={<SectionSkeleton />}>
+            <TechStack />
+          </Suspense>
         </section>
 
-        {/* Education Section */}
         <section>
-          <Education />
+          <Suspense fallback={<SectionSkeleton />}>
+            <Education />
+          </Suspense>
         </section>
 
-        {/* Achievements Section */}
         <section>
-          <Achievements />
+          <Suspense fallback={<SectionSkeleton />}>
+            <Achievements />
+          </Suspense>
         </section>
 
-        {/* Contact Section */}
         <section id="contact">
-          <Contact />
+          <Suspense fallback={<SectionSkeleton />}>
+            <Contact />
+          </Suspense>
         </section>
       </div>
 
-      {/* Footer */}
-      <Footer />
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
 
-      {/* Fixed Bottom Navigation */}
+      {/* Navigation is eager — it's fixed and always visible */}
       <Navigation activeSection={activeSection} isChatOpen={isChatOpen} onChatToggle={setIsChatOpen} />
 
-      {/* Chatbot */}
-      <Chatbot isOpen={isChatOpen} onToggle={setIsChatOpen} />
+      {/* Chatbot — lazy; heavy OpenAI SDK chunk loads after page is interactive */}
+      <Suspense fallback={null}>
+        <Chatbot isOpen={isChatOpen} onToggle={setIsChatOpen} />
+      </Suspense>
     </div>
   );
 }

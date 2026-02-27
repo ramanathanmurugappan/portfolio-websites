@@ -187,7 +187,7 @@ export default function Hero() {
         {/* Mobile-only — full-width hero image */}
         <div className="md:hidden relative overflow-hidden flex-shrink-0" style={{ height: '54vh', minHeight: 320 }}>
           <img
-            src="/images/avatar-hero.png"
+            src="/images/avatar-hero.jpg"
             alt="Ramanathan"
             className="w-full h-full object-cover object-top"
           />
@@ -206,7 +206,7 @@ export default function Hero() {
         {/* Desktop-only — full-bleed avatar panel */}
         <div className="hidden md:block md:w-[44%] relative overflow-hidden flex-shrink-0">
           <motion.img
-            src="/images/avatar-hero.png"
+            src="/images/avatar-hero.jpg"
             alt="Ramanathan"
             style={{ y: avatarY }}
             className="absolute inset-0 w-full h-[110%] object-cover object-top"
