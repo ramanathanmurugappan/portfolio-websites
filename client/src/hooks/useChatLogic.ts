@@ -58,6 +58,29 @@ const EASTER_EGG_RESPONSE =
 const TYPING_SPEED_MS    = 25;
 const CONFETTI_DURATION  = 2000;
 const HISTORY_CAP        = 20;
+const MAX_INPUT_LENGTH   = 500;
+
+const INJECTION_PATTERNS = [
+  /ignore\s+(previous|prior|above|all)\s+(instructions?|prompts?|rules?|context)/i,
+  /you\s+are\s+now\s+(a|an|the)/i,
+  /act\s+as\s+(a|an|the)/i,
+  /pretend\s+(to\s+be|you\s+are)/i,
+  /jailbreak/i,
+  /\bDAN\b/,
+  /developer\s+mode/i,
+  /system\s+override/i,
+  /reveal\s+(your\s+)?(system\s+)?prompt/i,
+  /show\s+(me\s+)?(your\s+)?(system\s+)?prompt/i,
+  /forget\s+(everything|your\s+instructions?|all\s+previous)/i,
+  /disregard\s+(all|previous|your)/i,
+  /<\|im_end\|>/,
+  /\[SYSTEM\]/,
+  /\[INST\]/,
+] as const;
+
+function detectInjection(text: string): boolean {
+  return INJECTION_PATTERNS.some((p) => (p as RegExp).test(text));
+}
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 
@@ -240,17 +263,18 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
     chatRef.current = {
       history: [],
       sendMessage: async (message) => {
+        const wrapped = `<user_input>${message}</user_input>`;
         const msgs = [
           { role: 'system' as const, content: PROFILE_CONTEXT },
           ...chatRef.current!.history,
-          { role: 'user'   as const, content: message },
+          { role: 'user'   as const, content: wrapped },
         ];
         let lastError: unknown;
         for (const model of GROQ_MODELS) {
           try {
             const res = await openaiRef.current!.chat.completions.create({ messages: msgs as any, model, temperature: 0.7, max_tokens: 300, top_p: 1, stream: false });
             const reply = res.choices[0]?.message?.content ?? '';
-            chatRef.current!.history.push({ role: 'user', content: message }, { role: 'assistant', content: reply });
+            chatRef.current!.history.push({ role: 'user', content: wrapped }, { role: 'assistant', content: reply });
             return { response: { text: () => reply } };
           } catch (err) { lastError = err; }
         }
@@ -346,11 +370,13 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || !chatRef.current) return;
 
-    setMessages((prev) => [...prev, { id: uid(), role: 'user', content: text, timestamp: new Date() }]);
+    const safe = text.trim().slice(0, MAX_INPUT_LENGTH);
+
+    setMessages((prev) => [...prev, { id: uid(), role: 'user', content: safe, timestamp: new Date() }]);
     setLoading(true);
 
     // Easter egg: skip LLM on hire keywords
-    if (HIRE_KEYWORDS.some((kw) => text.toLowerCase().includes(kw))) {
+    if (HIRE_KEYWORDS.some((kw) => safe.toLowerCase().includes(kw))) {
       const eggId = uid();
       setMessages((prev) => [...prev, { id: eggId, role: 'bot', content: EASTER_EGG_RESPONSE, timestamp: new Date(), isEasterEgg: true }]);
       setConfettiId(eggId);
@@ -360,8 +386,18 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
       return;
     }
 
+    // Prompt injection guard — deflect without calling the LLM
+    if (detectInjection(safe)) {
+      const botId = uid();
+      const reply = "I'm Ramanathan! Happy to answer questions about my experience and work. What would you like to know?";
+      setMessages((prev) => [...prev, { id: botId, role: 'bot', content: reply, timestamp: new Date() }]);
+      revealMessage(botId, reply);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const result = await chatRef.current.sendMessage(text);
+      const result = await chatRef.current.sendMessage(safe);
       const botMsg: Message = { id: uid(), role: 'bot', content: result.response.text(), timestamp: new Date() };
       setMessages((prev) => [...prev, botMsg]);
       revealMessage(botMsg.id, botMsg.content);
@@ -543,11 +579,16 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
     if (!conversationActiveRef.current) { setVoiceStatus('idle'); setIsListening(false); return; }
     if (!transcript?.trim() || !chatRef.current) { stopConversation(); return; }
 
+    const safeTranscript = transcript.trim().slice(0, MAX_INPUT_LENGTH);
+
+    // Prompt injection guard for voice input
+    if (detectInjection(safeTranscript)) { stopConversation(); return; }
+
     setVoiceStatus('thinking');
-    setMessages((prev) => [...prev, { id: uid(), role: 'user', content: transcript.trim(), timestamp: new Date() }]);
+    setMessages((prev) => [...prev, { id: uid(), role: 'user', content: safeTranscript, timestamp: new Date() }]);
 
     try {
-      const result       = await chatRef.current.sendMessage(transcript.trim());
+      const result       = await chatRef.current.sendMessage(safeTranscript);
       const responseText = result.response.text();
       setMessages((prev) => [...prev, { id: uid(), role: 'bot', content: responseText, timestamp: new Date() }]);
       setLastBotResponse(responseText);
