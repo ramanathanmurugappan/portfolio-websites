@@ -35,10 +35,11 @@ export default function Navigation({ activeSection, isChatOpen = false, onChatTo
   };
 
   return (
-    <nav className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-40 nav-bar w-full px-4 md:w-auto md:px-0">
-      <div
-        className="flex items-center gap-[5px] p-[10px] rounded-[20px] mx-auto w-fit nav-glass"
-      >
+    <nav
+      className="fixed left-1/2 -translate-x-1/2 z-40 nav-bar w-full px-4 md:w-auto md:px-0"
+      style={{ bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className="flex items-center gap-[4px] md:gap-[5px] p-[8px] md:p-[10px] rounded-[18px] md:rounded-[20px] mx-auto w-fit nav-glass">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.isChat ? isChatOpen : activeSection === item.id;
@@ -57,8 +58,8 @@ export default function Navigation({ activeSection, isChatOpen = false, onChatTo
               title={item.label}
               className={`
                 flex items-center justify-center
-                min-w-[52px] min-h-[52px] w-[52px] h-[52px]
-                rounded-[14px]
+                w-[44px] h-[44px] md:w-[52px] md:h-[52px]
+                rounded-[12px] md:rounded-[14px]
                 transition-all duration-200 ease-out
                 active:scale-95
                 ${isActive
@@ -69,7 +70,8 @@ export default function Navigation({ activeSection, isChatOpen = false, onChatTo
                 }
               `}
             >
-              <Icon size={22} strokeWidth={1.75} />
+              <Icon size={20} className="md:hidden" strokeWidth={1.75} />
+              <Icon size={22} className="hidden md:block" strokeWidth={1.75} />
             </button>
           );
         })}
