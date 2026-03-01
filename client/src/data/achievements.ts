@@ -15,14 +15,14 @@ export interface Publication {
 
 export const achievements: Achievement[] = [
   {
-    title: '2 Publications 📚',
+    title: '2 Publications',
     description: 'IEEE & FICC Conference Papers',
     memojiPosition: 'left',
     memojiImage: '/images/avatar-hero.jpg',
     highlight: 'Research',
   },
   {
-    title: 'GrowthX Winner 🏆',
+    title: 'GrowthX Winner',
     description: 'Scaled Blue Tokai revenue from ₹250 crore to ₹500 crore within 12 months. Won Capstone presenting to 1,000+ industry professionals.',
     memojiPosition: 'right',
     memojiImage: '/images/avatar-thinking.jpg',
@@ -30,7 +30,7 @@ export const achievements: Achievement[] = [
     link: 'https://www.linkedin.com/posts/ramanathan-murugappan-66a068125_our-journey-to-doubling-blue-tokais-revenue-activity-7222875771843796992-vy4b',
   },
   {
-    title: '4 Certifications 🎓',
+    title: '4 Certifications',
     description: 'Red Hat OpenShift, Google GenAI, Workera Analytics & Responsible AI',
     memojiPosition: 'left',
     memojiImage: '/images/avatar-coding.jpg',

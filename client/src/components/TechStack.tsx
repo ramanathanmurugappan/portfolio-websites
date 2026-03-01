@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Layers } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { techCategories } from '../data/techCategories';
 
@@ -196,7 +197,7 @@ export default function TechStack() {
   return (
     <div ref={containerRef} className="flex flex-col gap-[40px]">
       <div className="container">
-        <SectionHeader eyebrow="🛠️ Tech Stack" title="What I Use" />
+        <SectionHeader icon={<Layers size={12} />} eyebrow="Tech Stack" title="What I Use" />
       </div>
 
       <div className="container">

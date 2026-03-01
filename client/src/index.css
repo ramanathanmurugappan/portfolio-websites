@@ -842,3 +842,88 @@
   background: var(--grey);
   border: 1px solid var(--black-opacity-7);
 }
+
+/* ── 11. AI Agents Section — Dark Mode Utility Package ───────────────────── */
+
+/* Outer panel / card */
+.agent-panel {
+  background-color: #f7f7f7;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.agent-panel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(30, 110, 244, 0.08);
+  border-color: rgba(30, 110, 244, 0.15);
+}
+.dark .agent-panel {
+  background-color: #1a1a1a;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.dark .agent-panel:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(30, 110, 244, 0.18);
+  border-color: rgba(30, 110, 244, 0.18);
+}
+
+/* Inner surface — input fields, nested buttons */
+.agent-surface {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.dark .agent-surface {
+  background-color: #141414;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Interactive pill / chip */
+.agent-chip {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.4);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.dark .agent-chip {
+  background-color: #141414;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.45);
+}
+.agent-chip:hover:not(:disabled) {
+  color: #1e6ef4;
+  border-color: rgba(30, 110, 244, 0.45);
+}
+.dark .agent-chip:hover:not(:disabled) {
+  border-color: rgba(30, 110, 244, 0.6);
+}
+.agent-chip:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* Uppercase section label */
+.agent-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.35);
+}
+.dark .agent-label {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Table column header border */
+.agent-thead-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+.dark .agent-thead-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Table data row separator */
+.agent-tbody-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+.agent-tbody-row:last-child { border-bottom: none; }
+.dark .agent-tbody-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}

@@ -23,6 +23,7 @@ const Projects     = lazy(() => import('@/components/Projects'));
 const TechStack    = lazy(() => import('@/components/TechStack'));
 const Education    = lazy(() => import('@/components/Education'));
 const Achievements = lazy(() => import('@/components/Achievements'));
+const AITools      = lazy(() => import('@/components/AITools'));
 const Contact      = lazy(() => import('@/components/Contact'));
 const Footer       = lazy(() => import('@/components/Footer'));
 const Chatbot      = lazy(() => import('@/components/Chatbot'));
@@ -114,6 +115,12 @@ export default function Home() {
         <section>
           <Suspense fallback={<SectionSkeleton />}>
             <Achievements />
+          </Suspense>
+        </section>
+
+        <section id="ai-tools">
+          <Suspense fallback={<SectionSkeleton />}>
+            <AITools />
           </Suspense>
         </section>
 

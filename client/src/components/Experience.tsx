@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Briefcase } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { experiences } from '../data/experience';
 import { companyColor, COMPANY_LOGOS } from '../data/brandColors';
@@ -33,7 +34,7 @@ export default function Experience() {
   return (
     <div className="flex flex-col gap-[40px]">
       <div className="container">
-        <SectionHeader eyebrow="💼 Experience" title="Work History" />
+        <SectionHeader icon={<Briefcase size={12} />} eyebrow="Experience" title="Work History" />
       </div>
 
       <div className="container">

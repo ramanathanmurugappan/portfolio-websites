@@ -6,6 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { FolderOpen } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import ScrollReveal from './ScrollReveal';
 import { projects } from '../data/projects';
@@ -131,7 +132,7 @@ export default function Projects() {
 
   return (
     <div className="container flex flex-col gap-[24px]">
-      <SectionHeader eyebrow="💻 Projects" title="Featured Work" />
+      <SectionHeader icon={<FolderOpen size={12} />} eyebrow="Projects" title="Featured Work" />
 
       {/* Hero */}
       <ScrollReveal y={24}>

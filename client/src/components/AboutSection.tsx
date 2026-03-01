@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { User } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 
 // ── Card data ─────────────────────────────────────────────────────────────────
@@ -240,7 +241,7 @@ function FlipCard({ card, index }: { card: CardData; index: number }) {
 export default function AboutSection() {
   return (
     <div className="container flex flex-col gap-[32px]">
-      <SectionHeader eyebrow="👋 About" title="Get to Know Me" />
+      <SectionHeader icon={<User size={12} />} eyebrow="About" title="Get to Know Me" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[12px] md:gap-[16px]">
         {CARDS.map((card, i) => (

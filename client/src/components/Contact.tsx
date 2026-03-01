@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Smartphone } from 'lucide-react';
+import { Smartphone, Mail } from 'lucide-react';
 import { socialLinks } from '../data/socialLinks';
 import MagneticButton from './MagneticButton';
 import ScrollReveal from './ScrollReveal';
@@ -71,8 +71,9 @@ export default function Contact() {
     <div className="container flex flex-col gap-[40px]">
       {/* Section Header */}
       <ScrollReveal className="flex flex-col items-center text-center gap-[20px]">
-        <h2 className="text-[clamp(20px,3vw,24px)] leading-[116%] tracking-[-0.02em] font-semibold">
-          📬 Get In Touch
+        <h2 className="inline-flex items-center gap-[10px] text-[clamp(20px,3vw,24px)] leading-[116%] tracking-[-0.02em] font-semibold">
+          <Mail size={22} />
+          Get In Touch
         </h2>
       </ScrollReveal>
 

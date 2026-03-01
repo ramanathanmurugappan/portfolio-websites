@@ -4,6 +4,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { GraduationCap, FlaskConical } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import ScrollReveal from './ScrollReveal';
 
@@ -15,7 +16,7 @@ const COURSEWORK = [
 export default function Education() {
   return (
     <div className="container flex flex-col gap-[40px]">
-      <SectionHeader eyebrow="🎓 Education" title="Academic Background" />
+      <SectionHeader icon={<GraduationCap size={12} />} eyebrow="Education" title="Academic Background" />
 
       <div className="rounded-[32px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[24px] md:p-[40px]
                       flex flex-col md:flex-row items-start justify-between gap-[28px] card-hover">
@@ -33,7 +34,8 @@ export default function Education() {
             viewport={{ once: true }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
           >
-            🎓 2018 – 2020
+            <GraduationCap size={12} />
+            2018 – 2020
           </motion.span>
 
           {/* Degree title — animated gradient shimmer */}
@@ -99,8 +101,9 @@ export default function Education() {
                      flex flex-col gap-[8px] w-full md:max-w-[400px] flex-shrink-0 card-hover"
           delay={0.2}
         >
-          <span className="text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
-            🔬 Research Experience
+          <span className="inline-flex items-center gap-[5px] text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
+            <FlaskConical size={11} />
+            Research Experience
           </span>
           <h4 className="text-[16px] font-semibold text-black dark:text-white">
             Solarillion Foundation (SF)

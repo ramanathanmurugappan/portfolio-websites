@@ -16,6 +16,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import OpenAI from 'openai';
 import { PROFILE_CONTEXT, GROQ_MODELS } from '../lib/profileContext';
 import { uid, getErrorMessage } from '../lib/chatUtils';
+import { detectInjection } from '../lib/groqUtils';
 import type { VoiceStatus } from '../components/VoiceMode';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -58,29 +59,7 @@ const EASTER_EGG_RESPONSE =
 const TYPING_SPEED_MS    = 25;
 const CONFETTI_DURATION  = 2000;
 const HISTORY_CAP        = 20;
-const MAX_INPUT_LENGTH   = 500;
-
-const INJECTION_PATTERNS = [
-  /ignore\s+(previous|prior|above|all)\s+(instructions?|prompts?|rules?|context)/i,
-  /you\s+are\s+now\s+(a|an|the)/i,
-  /act\s+as\s+(a|an|the)/i,
-  /pretend\s+(to\s+be|you\s+are)/i,
-  /jailbreak/i,
-  /\bDAN\b/,
-  /developer\s+mode/i,
-  /system\s+override/i,
-  /reveal\s+(your\s+)?(system\s+)?prompt/i,
-  /show\s+(me\s+)?(your\s+)?(system\s+)?prompt/i,
-  /forget\s+(everything|your\s+instructions?|all\s+previous)/i,
-  /disregard\s+(all|previous|your)/i,
-  /<\|im_end\|>/,
-  /\[SYSTEM\]/,
-  /\[INST\]/,
-] as const;
-
-function detectInjection(text: string): boolean {
-  return INJECTION_PATTERNS.some((p) => (p as RegExp).test(text));
-}
+const MAX_INPUT_LENGTH = 500;
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 

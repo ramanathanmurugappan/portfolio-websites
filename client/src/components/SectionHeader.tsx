@@ -1,12 +1,14 @@
+import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
 interface SectionHeaderProps {
-  eyebrow: string;   // e.g. "🛠️ Tech Stack"
-  title: string;     // e.g. "What I Use"
+  eyebrow?: string;
+  icon?: ReactNode;
+  title: string;
   centered?: boolean;
 }
 
-export default function SectionHeader({ eyebrow, title, centered }: SectionHeaderProps) {
+export default function SectionHeader({ eyebrow, icon, title, centered }: SectionHeaderProps) {
   return (
     <motion.div
       className={`flex flex-col gap-[8px] ${centered ? 'items-center text-center' : ''}`}
@@ -15,9 +17,12 @@ export default function SectionHeader({ eyebrow, title, centered }: SectionHeade
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.5 }}
     >
-      <span className="text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
-        {eyebrow}
-      </span>
+      {(eyebrow || icon) && (
+        <span className="inline-flex items-center gap-[6px] text-[11px] tracking-[0.08em] text-black/35 dark:text-white/35 uppercase font-semibold">
+          {icon}
+          {eyebrow}
+        </span>
+      )}
       <h2 className="text-[clamp(28px,4vw,40px)] leading-[116%] tracking-[-0.02em] font-semibold">
         {title}
       </h2>

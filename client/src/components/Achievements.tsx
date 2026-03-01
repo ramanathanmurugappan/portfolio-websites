@@ -5,6 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { Trophy, FileText } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { achievements, publications } from '../data/achievements';
 
@@ -25,7 +26,7 @@ function AvatarBox({ src, position }: { src: string; position: 'left' | 'right' 
 export default function Achievements() {
   return (
     <div className="container flex flex-col gap-[40px]">
-      <SectionHeader eyebrow="🏅 Achievements" title="Highlights & Publications" centered />
+      <SectionHeader icon={<Trophy size={12} />} eyebrow="Achievements" title="Highlights & Publications" centered />
 
       {/* Achievement Cards */}
       <div className="flex flex-col gap-[14px]">
@@ -74,8 +75,9 @@ export default function Achievements() {
 
       {/* Publications Section */}
       <div className="flex flex-col gap-[20px] mt-[20px]">
-        <h3 className="text-[20px] md:text-[24px] leading-[116%] tracking-[-0.02em] font-semibold text-center text-black dark:text-white">
-          📄 Research Publications
+        <h3 className="inline-flex items-center justify-center gap-[8px] text-[20px] md:text-[24px] leading-[116%] tracking-[-0.02em] font-semibold text-center text-black dark:text-white">
+          <FileText size={20} />
+          Research Publications
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">
           {publications.map((pub, i) => (
@@ -87,8 +89,9 @@ export default function Achievements() {
               transition={{ duration: 0.5, ease: 'easeOut', delay: i * 0.1 }}
               className="rounded-[24px] bg-[#f7f7f7] dark:bg-[#1a1a1a] p-[28px] flex flex-col gap-[12px] card-hover group"
             >
-              <span className="text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
-                📄 Published Paper
+              <span className="inline-flex items-center gap-[5px] text-[11px] tracking-[0.08em] text-[#1e6ef4] uppercase font-semibold">
+                <FileText size={11} />
+                Published Paper
               </span>
               <h4 className="text-[14px] leading-[140%] font-semibold group-hover:text-[#1e6ef4] transition-colors duration-200 text-black dark:text-white">
                 {pub.title}

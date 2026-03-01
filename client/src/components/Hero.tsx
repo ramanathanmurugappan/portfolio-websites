@@ -60,7 +60,7 @@ function TypewriterRole() {
 
   return (
     <div className="flex items-center gap-[10px] h-[36px]">
-      <span className="text-[13px] text-black/40 dark:text-white/40 font-medium flex-shrink-0">I am a</span>
+      <span className="text-[16px] text-black/25 dark:text-white/25 font-medium flex-shrink-0">→</span>
       <span className="text-[clamp(16px,2.2vw,20px)] font-bold text-[#1e6ef4] tracking-[-0.01em]">
         {displayed}
         <span className="inline-block w-[2px] h-[18px] bg-[#1e6ef4] ml-[2px] align-middle animate-pulse rounded-full" />
