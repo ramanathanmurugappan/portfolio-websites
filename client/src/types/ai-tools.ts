@@ -16,7 +16,7 @@ export interface JDResult {
 
 export interface Criterion { criterion: string; values: string[]; winner: number; }
 export interface Category {
-  category: string; tools: string[]; criteria: Criterion[]; categoryWinner: string;
+  category: string; tools: string[]; criteria: Criterion[]; categoryWinner: string; winnerReason?: string;
 }
 export interface Pair { a: string; b: string; reason: string; }
 export interface PipelineLayer { layer: string; tools: string[]; pick: string; }
@@ -46,4 +46,18 @@ export interface ProjectRec {
   toolsUsed:   string[];
   difficulty:  'Beginner' | 'Intermediate' | 'Advanced';
   highlights:  string[];
+}
+
+export interface IdeaLayer {
+  layer:        string;    // e.g. "API Layer", "Vector Store"
+  tool:         string;    // e.g. "FastAPI", "Qdrant Cloud"
+  why:          string;    // Production rationale — one sentence
+  alternatives: string[];  // 1–2 alternatives worth considering
+}
+
+export interface IdeaStackResult {
+  summary:          string;    // One-line architecture description
+  architecture:     string;    // Pattern name e.g. "RAG Pipeline", "Event-Driven Microservices"
+  layers:           IdeaLayer[]; // Ordered production stack layers
+  productionNotes:  string[];  // 2–3 key production considerations
 }

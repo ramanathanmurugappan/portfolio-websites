@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { BrainCircuit, ClipboardList, Network } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Cpu, ClipboardList, Network } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import JDAnalyzer from './JDAnalyzer';
 import TechExplorer from './TechExplorer';
@@ -10,12 +11,16 @@ const TABS = [
     icon:  <ClipboardList size={13} />,
     label: 'JD Fit Analyzer',
     desc:  'Paste a job description — get a match score, skill gap analysis, and a tailored cover letter opener.',
+    image: '/images/ai-jd-analyzer.png',
+    imageAlt: 'JD Fit Analyzer preview',
   },
   {
     id:    'tech' as const,
     icon:  <Network size={13} />,
     label: 'StackCraft',
     desc:  'Add any AI tools or frameworks — compare side-by-side, build a complete pipeline from your picks, and discover projects you can ship.',
+    image: '/images/ai-stackcraft.png',
+    imageAlt: 'StackCraft preview',
   },
 ] as const;
 
@@ -27,10 +32,10 @@ export default function AITools() {
 
   return (
     <div className="container flex flex-col gap-[40px]">
-      <SectionHeader icon={<BrainCircuit size={14} />} eyebrow="AI" title="AI Agents" />
+      <SectionHeader icon={<Cpu size={14} />} eyebrow="AI" title="AI Agents" />
 
-      {/* Tab switcher */}
-      <div className="flex flex-col gap-[14px]">
+      {/* Tab switcher row */}
+      <div className="relative flex flex-col gap-[14px]">
         <div className="flex gap-[6px] p-[4px] rounded-[14px] agent-panel w-fit">
           {TABS.map(tab => (
             <button
@@ -47,9 +52,40 @@ export default function AITools() {
             </button>
           ))}
         </div>
+
         <p className="text-[13px] text-black/40 dark:text-white/35 font-semibold">
           {active.desc}
         </p>
+
+        {/* Mobile: logo inline below description */}
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={activeTab + '-mobile'}
+            src={active.image}
+            alt={active.imageAlt}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden"
+            style={{ height: 80, width: 'auto' }}
+          />
+        </AnimatePresence>
+
+        {/* Desktop: logo absolutely positioned top-right */}
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={activeTab + '-desktop'}
+            src={active.image}
+            alt={active.imageAlt}
+            initial={{ opacity: 0, x: 6 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="hidden md:block"
+            style={{ height: 140, width: 'auto', position: 'absolute', top: 0, right: 0 }}
+          />
+        </AnimatePresence>
       </div>
 
       {activeTab === 'jd'   && <JDAnalyzer   />}

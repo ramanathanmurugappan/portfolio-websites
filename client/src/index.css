@@ -927,3 +927,34 @@
 .dark .agent-tbody-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
+
+/* ── 12. Shared Surface Utilities — light + dark in one class ─────────────── */
+
+/*
+ * card-bg   — section-level card surface (#f7f7f7 / #1a1a1a)
+ * inner-bg  — nested / inner surface (#ffffff / #0f0f0f)
+ * avatar-bg — avatar card tint (#E8E0F0 / #2D1F45)
+ *
+ * Use these instead of `bg-[...] dark:bg-[...]` inline Tailwind pairs.
+ */
+
+.card-bg {
+  background-color: #f7f7f7;
+}
+.dark .card-bg {
+  background-color: #1a1a1a;
+}
+
+.inner-bg {
+  background-color: #ffffff;
+}
+.dark .inner-bg {
+  background-color: #0f0f0f;
+}
+
+.avatar-bg {
+  background-color: #E8E0F0;
+}
+.dark .avatar-bg {
+  background-color: #2D1F45;
+}

@@ -22,7 +22,7 @@ export const achievements: Achievement[] = [
     highlight: 'Research',
   },
   {
-    title: 'GrowthX Winner',
+    title: '₹500Cr Revenue Scaled',
     description: 'Scaled Blue Tokai revenue from ₹250 crore to ₹500 crore within 12 months. Won Capstone presenting to 1,000+ industry professionals.',
     memojiPosition: 'right',
     memojiImage: '/images/avatar-thinking.jpg',
