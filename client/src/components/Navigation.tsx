@@ -38,9 +38,6 @@ export default function Navigation({ activeSection, isChatOpen = false, onChatTo
     <nav className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-40 nav-bar w-full px-4 md:w-auto md:px-0">
       <div
         className="flex items-center gap-[5px] p-[10px] rounded-[20px] mx-auto w-fit nav-glass"
-        style={{
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)',
-        }}
       >
         {navItems.map((item) => {
           const Icon = item.icon;

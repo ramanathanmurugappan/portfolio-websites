@@ -720,17 +720,35 @@
   100% { transform: translate(0, 0); }
 }
 
-/* ── 3. Enhanced Nav Glassmorphism ── */
+/* ── 3. iPhone-style Nav Glassmorphism ── */
 .nav-glass {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  /* Translucent frosted base — low opacity so content bleeds through */
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(60px) saturate(220%) brightness(1.08);
+  -webkit-backdrop-filter: blur(60px) saturate(220%) brightness(1.08);
+
+  /* Hairline border + soft inner specular highlight at top */
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    /* Outer depth shadow */
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px  rgba(0, 0, 0, 0.08),
+    /* Inner top highlight — mimics iOS glass sheen */
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    /* Outer ring for definition */
+    0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
 .dark .nav-glass {
-  background: rgba(12, 12, 12, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(18, 18, 18, 0.55);
+  backdrop-filter: blur(60px) saturate(200%) brightness(0.95);
+  -webkit-backdrop-filter: blur(60px) saturate(200%) brightness(0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 2px 8px  rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 /* ── 4. Animated Gradient Text (Hero subtitle) ── */
