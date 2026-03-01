@@ -13,6 +13,9 @@ build/
 .env.local
 .env.*.local
 
+# Claude Code
+CLAUDE.md
+
 # IDE
 .vscode/
 .idea/
