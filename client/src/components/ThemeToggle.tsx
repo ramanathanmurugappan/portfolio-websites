@@ -20,7 +20,8 @@ export default function ThemeToggle() {
       <MagneticButton>
         <a
           href="/Ramanathan_6_Yrs_Gen_AI_Architect.pdf"
-          download
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center gap-[6px] px-[10px] md:px-[14px] h-[40px] md:h-[48px] rounded-[10px] md:rounded-[12px] bg-white dark:bg-[#1a1a1a] text-black/55 dark:text-white/55 hover:text-[#1e6ef4] dark:hover:text-[#1e6ef4] border border-black/[0.07] dark:border-white/[0.07] shadow-sm hover:shadow-md transition-all duration-200 ease-out active:scale-95 text-[12px] md:text-[13px] font-semibold select-none"
           aria-label="Download Resume"
           title="Download Resume PDF"
