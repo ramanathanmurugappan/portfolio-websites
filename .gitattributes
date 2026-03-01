@@ -1,0 +1,9 @@
+# Treat binary files as binary — suppresses VS Code line terminator warnings
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.svg  binary
+*.woff binary
+*.woff2 binary
