@@ -67,8 +67,8 @@ export default function AITools() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden"
-            style={{ height: 80, width: 'auto' }}
+            className="md:hidden rounded-[16px] object-cover"
+            style={{ height: 80, width: 80 }}
           />
         </AnimatePresence>
 
