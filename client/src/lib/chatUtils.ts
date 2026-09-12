@@ -7,6 +7,11 @@ export function uid(): string {
   return crypto.randomUUID();
 }
 
+/** Formats a message timestamp as a short local time, e.g. "10:42 AM". */
+export function formatMessageTime(date: Date): string {
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
 /** Maps API errors to user-friendly messages. Single source of truth used by
  *  both text sendMessage and voice runConversationLoop. */
 export function getErrorMessage(error: unknown): string {

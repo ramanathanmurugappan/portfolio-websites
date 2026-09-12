@@ -2,7 +2,7 @@
  * useChatLogic — all business logic for the Chatbot widget.
  *
  * Extracted from Chatbot.tsx so the component stays render-only.
- * Handles: LLM (Groq), TTS (VoiceRSS), STT (Deepgram/MediaRecorder),
+ * Handles: LLM (Groq), TTS (Groq Orpheus), STT (Deepgram/MediaRecorder),
  * chat history persistence, typing reveal, dictation, easter egg.
  *
  * Bug fixes vs the original monolithic component:
@@ -77,19 +77,24 @@ function loadHistory(): Message[] {
 
 // ── TTS helper (module-level, no component state) ─────────────────────────────
 
+// Groq's Orpheus TTS only accepts these voice names, and only "wav" for response_format.
+const TTS_VOICE = 'daniel';
+
 async function fetchTTSAudio(text: string): Promise<ArrayBuffer> {
-  const params = new URLSearchParams({
-    key:  import.meta.env.VITE_VOICERSS_API_KEY,
-    hl:   'en-in',
-    v:    'Ajit',
-    src:  text,
-    c:    'MP3',
-    f:    '44khz_16bit_stereo',
-    ssml: 'false',
-    b64:  'false',
+  const res = await fetch('https://api.groq.com/openai/v1/audio/speech', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model:           'canopylabs/orpheus-v1-english',
+      input:           text,
+      voice:           TTS_VOICE,
+      response_format: 'wav',
+    }),
   });
-  const res = await fetch(`https://api.voicerss.org/?${params.toString()}`);
-  if (!res.ok) throw new Error(`VoiceRSS TTS error: ${res.status}`);
+  if (!res.ok) throw new Error(`Groq TTS error: ${res.status}`);
   return res.arrayBuffer();
 }
 
@@ -109,6 +114,7 @@ export interface ChatLogic {
   input: string;
   setInput: (v: string) => void;
   loading: boolean;
+  isRevealing: boolean;
   chatMode: 'text' | 'voice';
   setChatMode: (m: 'text' | 'voice') => void;
   // TTS
@@ -121,6 +127,8 @@ export interface ChatLogic {
   // Typing reveal
   displayContents: Record<string, string>;
   confettiId: string | null;
+  // Quick questions — shown only on the welcome screen
+  showQuickQuestions: boolean;
   // DOM ref for scroll-to-bottom
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   // Handlers
@@ -151,6 +159,10 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   const [lastBotResponse,  setLastBotResponse]  = useState('');
   const [displayContents,  setDisplayContents]  = useState<Record<string, string>>({});
   const [confettiId,       setConfettiId]       = useState<string | null>(null);
+  // True from the moment a bot reply starts its char-by-char reveal until it finishes —
+  // keeps the input disabled so it never looks like an idle empty box mid-response,
+  // and prevents a second send from cutting the reveal off half-typed.
+  const [isRevealing,      setIsRevealing]      = useState(false);
 
   // ── Refs ──────────────────────────────────────────────────────────────────
 
@@ -206,9 +218,10 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
 
   // ── Typing reveal ─────────────────────────────────────────────────────────
 
-  const revealMessage = useCallback((id: string, content: string) => {
+  const revealMessage = useCallback((id: string, content: string, onDone?: () => void) => {
     if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
     setDisplayContents((prev) => ({ ...prev, [id]: '' }));
+    setIsRevealing(true);
     let i = 0;
     typingIntervalRef.current = setInterval(() => {
       // Guard: skip state updates if component already unmounted
@@ -221,6 +234,8 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
       if (i >= content.length) {
         clearInterval(typingIntervalRef.current!);
         typingIntervalRef.current = null;
+        setIsRevealing(false);
+        onDone?.();
       }
     }, TYPING_SPEED_MS);
   }, []);
@@ -229,6 +244,11 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
     if (msg.role !== 'bot') return msg.content;
     return msg.id in displayContents ? displayContents[msg.id] : msg.content;
   }, [displayContents]);
+
+  // ── Quick questions visibility ────────────────────────────────────────────
+  // Shown only on the welcome screen, before the first real exchange.
+
+  const showQuickQuestions = messages.length === 1 && !loading;
 
   // ── Groq client init ──────────────────────────────────────────────────────
 
@@ -332,7 +352,7 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
     setSpeakingMessageId(messageId);
     try {
       const buffer = await fetchTTSAudio(text);
-      const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }));
+      const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
       const audio = new Audio(url);
       audioRef.current = audio;
       const cleanup = () => { URL.revokeObjectURL(url); audioRef.current = null; setSpeakingMessageId(null); };
@@ -404,6 +424,7 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
     stopAudio();
     setSpeakingMessageId(null);
     setDisplayContents({});
+    setIsRevealing(false);
     setInput('');
     if (chatRef.current) chatRef.current.history = [];
     setMessages([{ ...WELCOME_MESSAGE, id: uid(), timestamp: new Date() }]);
@@ -447,7 +468,7 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
       if (interruptedRef.current) return 'interrupted';
       // Wrap the event-driven Audio API in a Promise — no async executor needed
       return new Promise((resolve) => {
-        const url   = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }));
+        const url   = URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
         const audio = new Audio(url);
         audioRef.current = audio;
         const cleanup = () => { URL.revokeObjectURL(url); audioRef.current = null; };
@@ -593,11 +614,12 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
 
   return {
     isOpen, setIsOpen,
-    messages, input, setInput, loading,
+    messages, input, setInput, loading, isRevealing,
     chatMode, setChatMode,
     speakingMessageId,
     isListening, isDictating, voiceStatus, lastBotResponse,
     displayContents, confettiId,
+    showQuickQuestions,
     messagesEndRef,
     getDisplayText,
     sendMessage, handleSendMessage, handleNewChat,

@@ -28,7 +28,7 @@ export async function groqJSON<T>(systemPrompt: string, userMessage: string): Pr
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: userMessage  },
@@ -91,7 +91,7 @@ export async function groqToolCall(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       messages,
       tools,
       tool_choice: 'auto',

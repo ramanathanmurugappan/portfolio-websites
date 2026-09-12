@@ -48,9 +48,9 @@ TECH: LangChain/LangGraph/LiteLLM/CrewAI/AutoGen/HuggingFace/vLLM/Ollama | MCP/R
 
 /** Groq model fallback chain — tried in order when rate limits are hit */
 export const GROQ_MODELS = [
-  'llama-3.3-70b-versatile',          // Best quality
-  'llama-3.1-8b-instant',             // Fast, high TPM
-  'qwen/qwen3-32b',                   // Qwen 32B
-  'llama-3.3-70b-specdec',            // Speculative decoding 70B
-  'moonshotai/kimi-k2-instruct-0905', // Moonshot fallback
+  'openai/gpt-oss-120b',          // Best quality
+  'openai/gpt-oss-20b',           // Fast fallback
+  'openai/gpt-oss-safeguard-20b', // OpenAI fallback
+  'qwen/qwen3.6-27b',             // Qwen fallback
+  'qwen/qwen3.8-27b',             // Qwen fallback
 ];
