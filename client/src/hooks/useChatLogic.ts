@@ -9,7 +9,7 @@
  *  - isMountedRef guards the typing-reveal interval (prevents stale updates)
  *  - Three cleanup effects consolidated into one with empty deps (all refs, no state)
  *  - useRef<any> replaced with typed refs
- *  - async-in-Promise constructor removed from speakText
+ *  - async-in-Promise constructor removed from playAudioBuffer
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -32,6 +32,11 @@ export interface Message {
 interface ChatHistory {
   history: { role: string; content: string }[];
   sendMessage: (msg: string) => Promise<{ response: { text: () => string } }>;
+  // Streaming variant used only by voice mode: calls onSentence as each complete
+  // sentence arrives from the LLM so it can be sent to TTS immediately, instead
+  // of waiting for the full reply before speaking any of it. Resolves with the
+  // full assembled reply once the stream ends.
+  sendMessageStreaming: (msg: string, onSentence: (sentence: string) => void) => Promise<string>;
 }
 
 // ── Constants (exported so Chatbot.tsx can use them in JSX) ───────────────────
@@ -94,8 +99,52 @@ async function fetchTTSAudio(text: string): Promise<ArrayBuffer> {
       response_format: 'wav',
     }),
   });
-  if (!res.ok) throw new Error(`Groq TTS error: ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(`Groq TTS error: ${res.status}`) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
   return res.arrayBuffer();
+}
+
+// ── Whisper hallucination filter ───────────────────────────────────────────────
+//
+// Whisper (all sizes, Groq's turbo included) is well-documented to "transcribe"
+// silence or ambient noise into stock phrases — an artifact of its training data
+// being full of captioned YouTube videos. Confirmed live against Groq's endpoint:
+// 2 seconds of pure digital silence comes back as the confident transcript
+// "Thank you." with no_speech_prob 0. A VAD gate keeps most noise from ever
+// reaching Whisper, but this catches whatever slips through.
+const WHISPER_HALLUCINATIONS = new Set([
+  'thank you', 'thank you.', 'thanks for watching', 'thank you for watching',
+  'thank you so much for watching', 'thanks for watching this video',
+  'please subscribe', 'subscribe to my channel', 'like and subscribe',
+  'please like and subscribe', "don't forget to subscribe",
+  'see you next time', 'see you in the next video', 'bye bye', 'goodbye everyone',
+  'you',
+]);
+
+function isWhisperHallucination(text: string | null | undefined): boolean {
+  if (!text) return true;
+  const normalized = text.toLowerCase().trim().replace(/[.!?,]+$/, '');
+  if (normalized.replace(/[^a-z0-9]/g, '').length <= 1) return true; // e.g. ".", "a" — junk
+  return WHISPER_HALLUCINATIONS.has(normalized);
+}
+
+// Defense-in-depth for voice mode: the system prompt tells the model to avoid markdown,
+// but strip any that slips through anyway before it reaches TTS — otherwise things like
+// table pipes or "**bold**" get read out loud as literal punctuation.
+function stripMarkdownForSpeech(text: string): string {
+  return text
+    .replace(/\|/g, ' ')                  // table pipes
+    .replace(/^[-*_]{3,}$/gm, '')         // horizontal rules / table separator rows
+    .replace(/^#{1,6}\s*/gm, '')          // headers
+    .replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1') // bold/italic markers
+    .replace(/^\s*[-*+]\s+/gm, '')        // bullet list markers
+    .replace(/^\s*\d+\.\s+/gm, '')        // numbered list markers
+    .replace(/`+/g, '')                   // inline code / code fences
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // ── Hook interface ────────────────────────────────────────────────────────────
@@ -121,6 +170,7 @@ export interface ChatLogic {
   speakingMessageId: string | null;
   // Voice (STT + conversation)
   isListening: boolean;
+  micLevel: number;
   isDictating: boolean;
   voiceStatus: VoiceStatus;
   lastBotResponse: string;
@@ -154,6 +204,10 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   const [chatMode,         setChatMode]         = useState<'text' | 'voice'>('text');
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [isListening,      setIsListening]      = useState(false);
+  // Live mic input level (0-1) while listening — drives a real-time reactive
+  // ring around the mic button so voice mode visibly responds to your voice
+  // as you speak, instead of a canned animation.
+  const [micLevel,         setMicLevel]          = useState(0);
   const [isDictating,      setIsDictating]      = useState(false);
   const [voiceStatus,      setVoiceStatus]      = useState<VoiceStatus>('idle');
   const [lastBotResponse,  setLastBotResponse]  = useState('');
@@ -178,6 +232,9 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   const recorderRef           = useRef<{ recorder: MediaRecorder; stream: MediaStream } | null>(null);
   const conversationActiveRef = useRef(false);
   const interruptedRef        = useRef(false);
+  // Resolves the in-flight playAudioBuffer() promise, if any, as 'interrupted' — called
+  // right before we actually pause so a manual stop is never mistaken for natural completion.
+  const interruptPlaybackRef  = useRef<(() => void) | null>(null);
   const openaiRef             = useRef<OpenAI | null>(null);
   const chatRef               = useRef<ChatHistory | null>(null);
 
@@ -193,6 +250,11 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   // ── Audio ─────────────────────────────────────────────────────────────────
 
   const stopAudio = useCallback(() => {
+    if (interruptPlaybackRef.current) {
+      const fn = interruptPlaybackRef.current;
+      interruptPlaybackRef.current = null;
+      fn();
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -213,6 +275,7 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
     }
     stopAudio();
     setIsListening(false);
+    setMicLevel(0);
     setVoiceStatus('idle');
   }, [stopAudio]);
 
@@ -276,6 +339,57 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
             chatRef.current!.history.push({ role: 'user', content: wrapped }, { role: 'assistant', content: reply });
             return { response: { text: () => reply } };
           } catch (err) { lastError = err; }
+        }
+        throw lastError;
+      },
+      sendMessageStreaming: async (message, onSentence) => {
+        const wrapped = `<user_input>${message}</user_input>`;
+        const msgs = [
+          { role: 'system' as const, content: PROFILE_CONTEXT },
+          // Voice-only addition — confirmed via a live test that without this, the model
+          // will happily reply with markdown tables/headers/bullets, which TTS reads
+          // aloud literally (pipes, asterisks, hyphens). Text mode doesn't need this since
+          // markdown renders fine in a chat bubble.
+          { role: 'system' as const, content: 'You are now speaking out loud in a live voice call, not typing in a chat window. Reply in plain spoken sentences only: no markdown, no tables, no bullet points, no headers, no code blocks, no asterisks. Keep it concise and conversational, the way you would actually talk.' },
+          ...chatRef.current!.history,
+          { role: 'user'   as const, content: wrapped },
+        ];
+        // Splits on sentence-ending punctuation followed by whitespace — good enough
+        // for spoken replies, which are short, plain sentences (no code blocks/lists).
+        const SENTENCE_BOUNDARY = /(?<=[.!?])\s+/;
+
+        let lastError: unknown;
+        for (const model of GROQ_MODELS) {
+          let fullText = '';
+          let buffer   = '';
+          try {
+            const stream = await openaiRef.current!.chat.completions.create({
+              messages: msgs as any, model, temperature: 0.7, max_tokens: 300, top_p: 1, stream: true,
+            });
+            for await (const chunk of stream as any) {
+              // Hanging up mid-reply should actually stop the request, not just stop
+              // reading it — breaking a `for await` over an OpenAI SDK stream aborts
+              // the underlying fetch.
+              if (!conversationActiveRef.current) break;
+              const delta = chunk.choices?.[0]?.delta?.content ?? '';
+              if (!delta) continue;
+              fullText += delta;
+              buffer   += delta;
+              const parts = buffer.split(SENTENCE_BOUNDARY);
+              buffer = parts.pop() ?? ''; // last part may be incomplete — keep accumulating it
+              for (const sentence of parts) onSentence(sentence);
+            }
+            if (buffer.trim()) onSentence(buffer); // flush whatever's left after the stream ends
+            chatRef.current!.history.push({ role: 'user', content: wrapped }, { role: 'assistant', content: fullText });
+            return fullText;
+          } catch (err) {
+            lastError = err;
+            // A model can fail mid-stream after already emitting (and speaking) part of a
+            // reply — rare on Groq, but if it happens don't silently retry with a second
+            // voice picking up mid-sentence. Only fall back to the next model when nothing
+            // was produced yet.
+            if (fullText) throw err;
+          }
         }
         throw lastError;
       },
@@ -421,14 +535,15 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   const handleNewChat = useCallback(() => {
     localStorage.removeItem('chat_history');
     if (typingIntervalRef.current) { clearInterval(typingIntervalRef.current); typingIntervalRef.current = null; }
-    stopAudio();
+    stopConversation(); // hang up an in-progress voice call so it doesn't keep running against the cleared history
     setSpeakingMessageId(null);
+    setLastBotResponse(''); // clear the voice-mode reply box too — a new chat should show no prior answer
     setDisplayContents({});
     setIsRevealing(false);
     setInput('');
     if (chatRef.current) chatRef.current.history = [];
     setMessages([{ ...WELCOME_MESSAGE, id: uid(), timestamp: new Date() }]);
-  }, [stopAudio]);
+  }, [stopConversation]);
 
   // ── Dictation (mic in text input) ─────────────────────────────────────────
 
@@ -460,26 +575,37 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
 
   // ── Voice conversation: TTS playback ─────────────────────────────────────
 
-  const speakText = useCallback(async (text: string): Promise<'completed' | 'interrupted'> => {
+  // Plays one already-fetched audio buffer and resolves once it's done (or cut short).
+  // Shared by the single-message "speak" button and the voice-mode sentence queue below.
+  const playAudioBuffer = useCallback((buffer: ArrayBuffer): Promise<'completed' | 'interrupted'> => {
     stopAudio();
-    interruptedRef.current = false;
-    try {
-      const buffer = await fetchTTSAudio(text);
-      if (interruptedRef.current) return 'interrupted';
-      // Wrap the event-driven Audio API in a Promise — no async executor needed
-      return new Promise((resolve) => {
-        const url   = URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        const cleanup = () => { URL.revokeObjectURL(url); audioRef.current = null; };
-        audio.onended = () => { cleanup(); resolve(interruptedRef.current ? 'interrupted' : 'completed'); };
-        audio.onerror = () => { cleanup(); resolve('completed'); };
-        audio.onpause = () => { if (!audio.ended) { cleanup(); resolve('interrupted'); } };
-        audio.play().catch(() => { cleanup(); resolve('completed'); });
-      });
-    } catch {
-      return 'completed';
-    }
+    return new Promise((resolve) => {
+      const url   = URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      let settled = false;
+      const cleanup = () => {
+        URL.revokeObjectURL(url);
+        if (audioRef.current === audio) audioRef.current = null;
+        if (interruptPlaybackRef.current === interrupt) interruptPlaybackRef.current = null;
+      };
+      const finish = (outcome: 'completed' | 'interrupted') => {
+        if (settled) return; // guards against onended firing after an interrupt already resolved us
+        settled = true;
+        cleanup();
+        resolve(outcome);
+      };
+      // Called by stopAudio() to end this sentence early — e.g. user hangs up, or the
+      // next sentence's playback is starting. Previously this relied on the audio
+      // element's own "pause" event, but browsers fire "pause" right before "ended" on
+      // completely NORMAL end-of-playback too, which was cutting sentences off right
+      // near their natural end. Resolving explicitly here removes that race entirely.
+      const interrupt = () => finish('interrupted');
+      interruptPlaybackRef.current = interrupt;
+      audio.onended = () => finish('completed');
+      audio.onerror = () => finish('completed');
+      audio.play().catch(() => finish('completed'));
+    });
   }, [stopAudio]);
 
   // ── Voice conversation: STT recording ────────────────────────────────────
@@ -502,14 +628,57 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
 
           const audioContext = new AudioContext();
           const analyser     = audioContext.createAnalyser();
-          analyser.fftSize   = 512;
+          analyser.fftSize   = 1024;
           audioContext.createMediaStreamSource(stream).connect(analyser);
 
-          const dataArray        = new Float32Array(analyser.frequencyBinCount);
-          const SILENCE_THRESHOLD = 0.012;
-          const SILENCE_DURATION  = 1500;
-          const MAX_DURATION      = 15000;
+          const dataArray = new Float32Array(analyser.frequencyBinCount);
+          const freqData  = new Float32Array(analyser.frequencyBinCount); // dB per bin
+          const binHz     = audioContext.sampleRate / analyser.fftSize;
+
+          // Fans, HVAC, and traffic hiss are steady and broadband/low-frequency; speech
+          // concentrates energy in ~300-3400Hz (voice formants) and varies over time.
+          // RMS alone can't tell "loud fan" from "speech" — this ratio can.
+          const voiceBandRatio = () => {
+            analyser.getFloatFrequencyData(freqData);
+            let inBand = 0, total = 0;
+            for (let i = 0; i < freqData.length; i++) {
+              const mag = Math.pow(10, freqData[i] / 20); // dB -> linear amplitude
+              total += mag;
+              const freq = i * binHz;
+              if (freq >= 300 && freq <= 3400) inBand += mag;
+            }
+            return total > 0 ? inBand / total : 0;
+          };
+
+          // Floor threshold for a silent room — never trust anything quieter as speech,
+          // no matter how low the calibrated noise floor comes in at.
+          const MIN_THRESHOLD       = 0.012;
+          // How long to just listen to the room before evaluating speech at all —
+          // lets us measure the ambient noise floor (fan, traffic, room hiss) instead
+          // of assuming a fixed threshold that's wrong for every environment but one.
+          const CALIBRATION_MS      = 350;
+          // Energy must stay above threshold this long, continuously, before we treat it
+          // as real speech starting — filters clicks, pops, and short noise bursts that
+          // a single loud frame would otherwise mistake for the start of a sentence.
+          const SPEECH_SUSTAIN_MS   = 220;
+          // Minimum share of energy that must sit in the speech-formant band (300-3400Hz)
+          // for a loud frame to count as speech at all — fan/HVAC noise is broadband/low
+          // and fails this even when it's loud enough to clear the amplitude threshold.
+          const VOICE_BAND_MIN_RATIO = 0.32;
+          // Shorter pause-to-cutoff than before — the old 1500ms made turn-taking feel laggy.
+          const SILENCE_DURATION    = 900;
+          // Give up and hang up quietly if nothing ever crosses the speech threshold —
+          // previously this fell through to the full 15s cap and then transcribed
+          // whatever ambient noise it had recorded, which is exactly what caused Whisper
+          // to hallucinate replies ("Thank you.", etc.) to rooms that never had speech in them.
+          const NO_SPEECH_TIMEOUT   = 6000;
+          const MAX_DURATION        = 15000;
+
           const startTime = Date.now();
+          const noiseSamples: number[] = [];
+          let threshold     = MIN_THRESHOLD;
+          let calibrated    = false;
+          let aboveSince    = 0;
           let speechStarted = false;
           let silenceStart  = 0;
 
@@ -518,25 +687,66 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
             stream.getTracks().forEach(t => t.stop());
             audioContext.close();
             recorderRef.current = null;
+            setMicLevel(0);
           };
 
           const checkAudio = () => {
             if (!conversationActiveRef.current || mediaRecorder.state !== 'recording') return;
             analyser.getFloatTimeDomainData(dataArray);
             const rms = Math.sqrt(dataArray.reduce((s, v) => s + v * v, 0) / dataArray.length);
-            if (rms > SILENCE_THRESHOLD) { speechStarted = true; silenceStart = 0; }
-            else if (speechStarted) {
-              if (!silenceStart) silenceStart = Date.now();
-              if (Date.now() - silenceStart > SILENCE_DURATION) { stopRecording(); return; }
+            const elapsed = Date.now() - startTime;
+
+            // Calibration window: just sample the room's noise floor, don't judge speech yet.
+            if (elapsed < CALIBRATION_MS) {
+              noiseSamples.push(rms);
+              setMicLevel(Math.min(1, rms / 0.12));
+              requestAnimationFrame(checkAudio);
+              return;
             }
-            if (Date.now() - startTime > MAX_DURATION) { stopRecording(); return; }
+            // Calibration just finished — set the real, room-adjusted threshold once.
+            if (!calibrated) {
+              calibrated = true;
+              if (noiseSamples.length > 0) {
+                const sorted = [...noiseSamples].sort((a, b) => a - b);
+                const noiseFloor = sorted[Math.floor(sorted.length / 2)]; // median — robust to one stray click
+                threshold = Math.max(MIN_THRESHOLD, noiseFloor * 3 + 0.004);
+              }
+            }
+
+            setMicLevel(Math.min(1, rms / 0.12));
+
+            // Loud AND speech-shaped — a fan that's merely loud fails the band-ratio check
+            // and never starts the sustain timer, so it can't be mistaken for a sentence.
+            if (rms > threshold && voiceBandRatio() > VOICE_BAND_MIN_RATIO) {
+              if (!aboveSince) aboveSince = Date.now();
+              if (!speechStarted && Date.now() - aboveSince > SPEECH_SUSTAIN_MS) speechStarted = true;
+              silenceStart = 0;
+            } else {
+              aboveSince = 0;
+              if (speechStarted) {
+                if (!silenceStart) silenceStart = Date.now();
+                if (Date.now() - silenceStart > SILENCE_DURATION) { stopRecording(); return; }
+              } else if (elapsed > NO_SPEECH_TIMEOUT) {
+                stopRecording(); return; // nothing ever sounded like speech — bail without calling the API
+              }
+            }
+            if (elapsed > MAX_DURATION) { stopRecording(); return; }
             requestAnimationFrame(checkAudio);
           };
 
           mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
           mediaRecorder.onstop = async () => {
             setIsListening(false);
-            if (chunks.length === 0) { resolve(null); return; }
+            // A manual hang-up (stopConversation) also stops the recorder — don't
+            // transcribe or flip status in that case, there's no one left listening.
+            if (!conversationActiveRef.current) { resolve(null); return; }
+            // Flip to "thinking" the instant recording stops — otherwise the UI still
+            // reads "Listening…" for the whole transcription round-trip, which is what
+            // made voice mode feel stuck/non-live rather than a real conversation.
+            // The VAD state machine above never confirmed real, sustained speech —
+            // don't waste an API call transcribing pure room noise.
+            if (!speechStarted || chunks.length === 0) { resolve(null); return; }
+            setVoiceStatus('thinking');
             const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
             try {
               const formData = new FormData();
@@ -549,7 +759,8 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
                 body:    formData,
               });
               const data = await res.json();
-              resolve(data.text?.trim() ?? null);
+              const text = data.text?.trim() ?? null;
+              resolve(isWhisperHallucination(text) ? null : text);
             } catch { resolve(null); }
           };
 
@@ -572,37 +783,74 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
 
   // ── Voice conversation: full loop ─────────────────────────────────────────
 
+  // Runs listen -> respond -> speak on repeat until the user taps to stop, the mic
+  // picks up nothing (silence timeout), or a hard error occurs — a real back-and-forth
+  // conversation rather than a single question-and-answer round.
   const runConversationLoop = useCallback(async () => {
     conversationActiveRef.current = true;
 
-    const transcript = await listenOnce();
-    if (!conversationActiveRef.current) { setVoiceStatus('idle'); setIsListening(false); return; }
-    if (!transcript?.trim() || !chatRef.current) { stopConversation(); return; }
+    while (conversationActiveRef.current) {
+      const transcript = await listenOnce();
+      if (!conversationActiveRef.current) break;
+      if (!transcript?.trim() || !chatRef.current) break; // silence / no speech detected — end the call
 
-    const safeTranscript = transcript.trim().slice(0, MAX_INPUT_LENGTH);
+      const safeTranscript = transcript.trim().slice(0, MAX_INPUT_LENGTH);
 
-    // Prompt injection guard for voice input
-    if (detectInjection(safeTranscript)) { stopConversation(); return; }
+      // Prompt injection guard for voice input
+      if (detectInjection(safeTranscript)) break;
 
-    setVoiceStatus('thinking');
-    setMessages((prev) => [...prev, { id: uid(), role: 'user', content: safeTranscript, timestamp: new Date() }]);
+      setVoiceStatus('thinking');
+      setMessages((prev) => [...prev, { id: uid(), role: 'user', content: safeTranscript, timestamp: new Date() }]);
 
-    try {
-      const result       = await chatRef.current.sendMessage(safeTranscript);
-      const responseText = result.response.text();
-      setMessages((prev) => [...prev, { id: uid(), role: 'bot', content: responseText, timestamp: new Date() }]);
-      setLastBotResponse(responseText);
-      if (conversationActiveRef.current) {
-        setVoiceStatus('speaking');
-        await speakText(responseText);
+      try {
+        // Pipeline the reply instead of waiting for the whole thing: each sentence is
+        // sent to TTS the instant the LLM finishes streaming it, so synthesis for
+        // sentence 2+ happens in the background while sentence 1 is already playing —
+        // audio starts on the first sentence instead of the full reply + full render.
+        let ttsRateLimited = false;
+        const ttsQueue: Promise<ArrayBuffer | null>[] = [];
+        const onSentence = (sentence: string) => {
+          const clean = stripMarkdownForSpeech(sentence);
+          if (!clean) return;
+          ttsQueue.push(fetchTTSAudio(clean).catch((err) => {
+            if (err?.status === 429) ttsRateLimited = true;
+            return null;
+          }));
+        };
+
+        const responseText = await chatRef.current.sendMessageStreaming(safeTranscript, onSentence);
+        setMessages((prev) => [...prev, { id: uid(), role: 'bot', content: responseText, timestamp: new Date() }]);
+        setLastBotResponse(responseText);
+
+        if (conversationActiveRef.current && ttsQueue.length > 0) {
+          setVoiceStatus('speaking');
+          interruptedRef.current = false;
+          let spokeAny = false;
+          for (const bufferPromise of ttsQueue) {
+            if (!conversationActiveRef.current || interruptedRef.current) break;
+            const buffer = await bufferPromise;
+            if (!buffer) continue; // that sentence's synthesis failed — skip it, keep going
+            spokeAny = true;
+            const outcome = await playAudioBuffer(buffer);
+            if (outcome === 'interrupted') break;
+          }
+          // Voice quota's hit for the day — say so as text rather than just going silent,
+          // since the visible reply is already there but nothing was actually spoken.
+          if (!spokeAny && ttsRateLimited) {
+            const notice = " (I've done a lot of talking today, so my voice needs a breather — texting this one instead.)";
+            setLastBotResponse((prev) => prev + notice);
+          }
+        }
+      } catch (error) {
+        const friendly = getErrorMessage(error);
+        setMessages((prev) => [...prev, { id: uid(), role: 'bot', content: friendly, timestamp: new Date() }]);
+        setLastBotResponse(friendly);
+        break; // don't keep looping after a hard failure
       }
-    } catch (error) {
-      const friendly = getErrorMessage(error);
-      setMessages((prev) => [...prev, { id: uid(), role: 'bot', content: friendly, timestamp: new Date() }]);
-      setLastBotResponse(friendly);
+      // Loop back to listenOnce() for the next turn while the call is still active.
     }
     stopConversation();
-  }, [listenOnce, speakText, stopConversation]);
+  }, [listenOnce, playAudioBuffer, stopConversation]);
 
   const toggleListening = useCallback(() => {
     if (!window.isSecureContext) { setLastBotResponse('Voice mode requires HTTPS or localhost.'); return; }
@@ -617,7 +865,7 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
     messages, input, setInput, loading, isRevealing,
     chatMode, setChatMode,
     speakingMessageId,
-    isListening, isDictating, voiceStatus, lastBotResponse,
+    isListening, micLevel, isDictating, voiceStatus, lastBotResponse,
     displayContents, confettiId,
     showQuickQuestions,
     messagesEndRef,

@@ -869,6 +869,15 @@
   50%       { height: 16px; opacity: 1; }
 }
 
+/* ── 8b. Chatbot — voice mode ambient breathing rings (idle state) ── */
+@keyframes voice-breathe {
+  0%, 100% { transform: scale(0.92); opacity: 0.16; }
+  50%      { transform: scale(1.1);  opacity: 0.34; }
+}
+.voice-breathe {
+  animation: voice-breathe 3.2s ease-in-out infinite;
+}
+
 /* ── 9. Chatbot — custom minimal scrollbar ── */
 .chat-messages::-webkit-scrollbar {
   width: 3px;

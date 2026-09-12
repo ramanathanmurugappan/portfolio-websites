@@ -47,7 +47,7 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
     messages, input, setInput, loading, isRevealing,
     chatMode, setChatMode,
     speakingMessageId,
-    isDictating, voiceStatus, lastBotResponse,
+    isDictating, voiceStatus, micLevel, lastBotResponse,
     confettiId,
     showQuickQuestions,
     messagesEndRef,
@@ -249,8 +249,10 @@ export default function Chatbot({ isOpen: externalIsOpen, onToggle }: ChatbotPro
           ) : (
             <VoiceMode
               voiceStatus={voiceStatus}
+              micLevel={micLevel}
               lastBotResponse={lastBotResponse}
               onToggle={toggleListening}
+              onNewChat={messages.length > 1 ? handleNewChat : undefined}
             />
           )}
         </div>
