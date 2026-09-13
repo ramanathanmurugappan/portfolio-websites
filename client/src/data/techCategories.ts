@@ -8,14 +8,12 @@ export interface TechItem {
 
 export interface TechCategory {
   title: string;
-  emoji: string;
   items: TechItem[];
 }
 
 export const techCategories: TechCategory[] = [
   {
     title: 'Gen AI & LLM',
-    emoji: '🦜',
     items: [
       { name: 'LangChain',       icon: '/images/tech-logos/langchain.svg',     isImage: true, darkInvert: true, description: 'LLM orchestration framework' },
       { name: 'LangGraph',       icon: '/images/tech-logos/langchain.svg',     isImage: true, darkInvert: true, description: 'Multi-agent workflow graphs' },
@@ -25,7 +23,6 @@ export const techCategories: TechCategory[] = [
   },
   {
     title: 'Agentic AI',
-    emoji: '⚡',
     items: [
       { name: 'MCP Protocol',  icon: '/images/tech-logos/anthropic.svg', isImage: true, darkInvert: true, description: 'Model Context Protocol' },
       { name: 'RAG Pipelines', icon: '📚',                                                                  description: 'Retrieval-augmented generation' },
@@ -35,7 +32,6 @@ export const techCategories: TechCategory[] = [
   },
   {
     title: 'Vector Databases',
-    emoji: '🎯',
     items: [
       { name: 'Qdrant',    icon: '/images/tech-logos/qdrant.svg',    isImage: true,                   description: 'High-performance vector search' },
       { name: 'Pinecone',  icon: '/images/tech-logos/pinecone.svg',  isImage: true, darkInvert: true, description: 'Managed vector database' },
@@ -45,7 +41,6 @@ export const techCategories: TechCategory[] = [
   },
   {
     title: 'ML & Data',
-    emoji: '📈',
     items: [
       { name: 'Python',              icon: '/images/tech-logos/python.svg',     isImage: true, description: 'Primary programming language' },
       { name: 'PyTorch',             icon: '/images/tech-logos/pytorch.svg',    isImage: true, description: 'Deep learning framework' },
@@ -56,7 +51,6 @@ export const techCategories: TechCategory[] = [
   },
   {
     title: 'Cloud & MLOps',
-    emoji: '☁️',
     items: [
       { name: 'AWS',             icon: '/images/tech-logos/aws.svg',      isImage: true, description: 'Lambda, EC2, S3, Bedrock' },
       { name: 'Docker & OpenShift',icon: '/images/tech-logos/docker.svg', isImage: true, description: 'Containerization' },
@@ -66,7 +60,6 @@ export const techCategories: TechCategory[] = [
   },
   {
     title: 'Frameworks & Tools',
-    emoji: '🛠️',
     items: [
       { name: 'FastAPI',          icon: '/images/tech-logos/fastapi.svg',    isImage: true, description: 'High-performance APIs' },
       { name: 'React.js',         icon: '/images/tech-logos/react.svg',      isImage: true, description: 'Frontend development' },
@@ -77,7 +70,6 @@ export const techCategories: TechCategory[] = [
   },
   {
     title: 'Voice AI & Web',
-    emoji: '🎙️',
     items: [
       { name: 'Groq API',       icon: '⚡',  description: 'LLM inference API (ultra-fast)' },
       { name: 'Deepgram',       icon: '/images/tech-logos/deepgram.svg', isImage: true, darkInvert: true, description: 'Cross-browser speech-to-text' },

@@ -3,7 +3,7 @@
  * Single source of truth — used by Projects and Experience.
  */
 
-export const COMPANY_COLORS: Record<string, string> = {
+const COMPANY_COLORS: Record<string, string> = {
   'ITC Infotech': '#1e6ef4',
   'Accenture':    '#a100ff',
   'Kaleidofin':   '#00b388',

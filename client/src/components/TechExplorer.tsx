@@ -8,28 +8,20 @@ import { useState, useRef, KeyboardEvent, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, X, Plus, ChevronRight, Sparkles, Lightbulb, RefreshCw, ShieldCheck } from 'lucide-react';
 import { groqJSON, detectInjection } from '../lib/groqUtils';
-import type { Criterion, Category, Pair, PipelineLayer, CompareResult, CompletePipelineLayer, ProjectRec, IdeaStackResult } from '../types/ai-tools';
+import type { CompareResult, CompletePipelineLayer, ProjectRec, IdeaStackResult } from '../types/ai-tools';
 import { COMPARE_PROMPT, buildPipelinePrompt, PROJECTS_PROMPT, BUILD_FROM_IDEA_PROMPT } from '../lib/prompts';
 
 // ── Normalize compare result ───────────────────────────────────────────────────
 
 function normalize(raw: Partial<CompareResult>): CompareResult {
   return {
-    categories:       (raw.categories ?? []).map(c => ({
+    categories: (raw.categories ?? []).map(c => ({
       ...c, tools: c.tools ?? [],
       criteria: (c.criteria ?? []).map(cr => ({ ...cr, values: cr.values ?? [], winner: cr.winner ?? -1 })),
       categoryWinner: c.categoryWinner ?? '',
       winnerReason: c.winnerReason ?? '',
     })),
-    singletons:       raw.singletons       ?? [],
-    competing:        raw.competing        ?? [],
-    complementary:    raw.complementary    ?? [],
-    pipeline:         (raw.pipeline ?? []).map(l => ({ ...l, tools: l.tools ?? [], pick: l.pick ?? '' })),
-    scores:           (raw.scores ?? []).map(s => ({ ...s, metrics: s.metrics ?? [] })),
-    recommendedStack:  raw.recommendedStack  ?? [],
-    recommendedReason: raw.recommendedReason ?? '',
-    ramanathanPick:    raw.ramanathanPick    ?? '',
-    ramanathanReason:  raw.ramanathanReason  ?? '',
+    singletons: raw.singletons ?? [],
   };
 }
 

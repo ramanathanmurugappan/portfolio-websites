@@ -2,19 +2,6 @@
  * Shared utilities for Groq API calls used by AI Tools agents.
  */
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-export interface ToolCall {
-  id: string;
-  type: 'function';
-  function: { name: string; arguments: string };
-}
-
-export type GroqMessage =
-  | { role: 'system' | 'user'; content: string }
-  | { role: 'assistant'; content: string | null; tool_calls?: ToolCall[] }
-  | { role: 'tool'; tool_call_id: string; content: string };
-
 // ── JSON mode call ─────────────────────────────────────────────────────────────
 
 export async function groqJSON<T>(systemPrompt: string, userMessage: string): Promise<T> {
@@ -75,32 +62,3 @@ export function detectInjection(text: string): boolean {
 
 /** Max chars for free-text JD / resume inputs (longer than chat) */
 export const MAX_JD_INPUT = 4000;
-/** Max chars for question inputs */
-export const MAX_Q_INPUT  = 500;
-
-// ── Tool-calling mode call ─────────────────────────────────────────────────────
-
-export async function groqToolCall(
-  messages: GroqMessage[],
-  tools: object[],
-): Promise<{ content: string | null; tool_calls?: ToolCall[] }> {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (!apiKey) throw new Error('VITE_GROQ_API_KEY is not set');
-
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: 'openai/gpt-oss-120b',
-      messages,
-      tools,
-      tool_choice: 'auto',
-      max_tokens: 500,
-      temperature: 0.3,
-    }),
-  });
-  if (!res.ok) throw new Error(`Groq API error ${res.status}`);
-  const data = await res.json();
-  const msg = data.choices[0].message;
-  return { content: msg.content ?? null, tool_calls: msg.tool_calls };
-}

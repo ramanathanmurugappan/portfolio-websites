@@ -94,15 +94,7 @@ Return ONLY valid JSON (no markdown):
       "winnerReason": "<1 sentence explaining why this tool wins overall based on the criteria>"
     }
   ],
-  "singletons": [ { "tool": "<name>", "category": "<exact category>", "verdict": "<one-line role in AI stack>" } ],
-  "competing":  [ { "a": "<A>", "b": "<B>", "reason": "<one-line>" } ],
-  "complementary": [ { "a": "<A>", "b": "<B>", "reason": "<one-line>" } ],
-  "pipeline": [ { "layer": "<layer>", "tools": ["<tool1>"], "pick": "<best>" } ],
-  "scores": [ { "tool": "<name>", "category": "<layer>", "metrics": [{"name":"Production Readiness","score":4},{"name":"Dev Experience","score":5},{"name":"Ecosystem","score":4}] } ],
-  "recommendedStack": ["<non-overlapping picks>"],
-  "recommendedReason": "<1-2 sentences>",
-  "ramanathanPick": "<tools Ramanathan uses>",
-  "ramanathanReason": "<1-2 sentences from his work at ITC Infotech or Accenture>"
+  "singletons": [ { "tool": "<name>", "category": "<exact category>", "verdict": "<one-line role in AI stack>" } ]
 }`;
 
 // ── StackCraft — Phase 2 (pipeline) ───────────────────────────────────────────

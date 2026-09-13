@@ -379,40 +379,6 @@
 }
 
 
-/* Fade In Animation */
-@keyframes fade-in {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-in-up {
-  0% {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scale-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 @keyframes slide-up {
   0% {
     opacity: 0;
@@ -423,30 +389,6 @@
     transform: translateY(0);
   }
 }
-
-.animate-fade-in {
-  animation: fade-in 0.6s ease-out forwards;
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.8s ease-out forwards;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.5s ease-out forwards;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.6s ease-out forwards;
-}
-
-/* Staggered Animation Delays */
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
-.delay-500 { animation-delay: 500ms; }
-.delay-600 { animation-delay: 600ms; }
 
 /* Card Hover Effects */
 .card-hover {
@@ -470,48 +412,6 @@
   border: 1px solid var(--black-opacity-4);
 }
 
-/* Accent Glow Utility */
-.accent-glow {
-  box-shadow: 0 0 20px rgba(30, 110, 244, 0.15);
-}
-
-/* Gradient Text Utility */
-.gradient-text {
-  background: linear-gradient(135deg, #1e6ef4, #6366f1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Scroll-triggered Reveal Animation */
-@keyframes reveal-up {
-  0% {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-reveal-up {
-  animation: reveal-up 0.6s ease-out forwards;
-}
-
-/* Button Hover Effects */
-.btn-primary {
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-}
-
 /* Navigation Bar Animation */
 .nav-bar {
   animation: slide-up 0.6s ease-out forwards;
@@ -526,20 +426,6 @@
 
 .img-transition:hover {
   transform: scale(1.02);
-}
-
-/* Badge Pulse Animation */
-@keyframes pulse-soft {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.animate-pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
 }
 
 /* Status Indicator Pulse */
@@ -558,48 +444,6 @@
   animation: status-pulse 2s ease-in-out infinite;
 }
 
-/* Smooth Scroll Indicator */
-@keyframes bounce-down {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(8px);
-  }
-}
-
-.animate-bounce-down {
-  animation: bounce-down 2s ease-in-out infinite;
-}
-
-/* Project Card Transition */
-.project-card {
-  transition: all 0.4s ease;
-}
-
-.project-card-enter {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.project-card-enter-active {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* Tech Icon Hover */
-.tech-icon {
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.tech-icon:hover {
-  transform: translateY(-4px);
-  background-color: #ebebeb;
-}
-
-.dark .tech-icon:hover {
-  background-color: #252525;
-}
 
 /* Achievement Card Hover */
 .achievement-card {
@@ -795,88 +639,12 @@
   }
 }
 
-/* ── 4. Animated Gradient Text (Hero subtitle) ── */
-@keyframes gradient-shift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.animate-gradient-text {
-  background: linear-gradient(
-    270deg,
-    rgba(0,0,0,0.35),
-    rgba(30,110,244,0.55),
-    rgba(99,102,241,0.55),
-    rgba(0,0,0,0.35)
-  );
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: gradient-shift 6s ease infinite;
-}
-
-.dark .animate-gradient-text {
-  background: linear-gradient(
-    270deg,
-    rgba(255,255,255,0.4),
-    rgba(99,102,241,0.75),
-    rgba(30,110,244,0.75),
-    rgba(255,255,255,0.4)
-  );
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-shift 6s ease infinite;
-}
-
-/* ── 5. Pill-shaped Active Slide Indicator ── */
-.slide-dot {
-  height: 6px;
-  border-radius: 9999px;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgba(0,0,0,0.15);
-}
-
-.dark .slide-dot {
-  background: rgba(255,255,255,0.15);
-}
-
-.slide-dot--active {
-  background: #1e6ef4;
-  width: 28px !important;
-}
-
-/* ── 6. Scroll Reveal (Framer Motion whileInView fallback) ── */
-.reveal-ready {
-  opacity: 0;
-  transform: translateY(28px);
-}
-
-/* ── 7. Section divider subtle line ── */
-.section-divider {
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--black-opacity-7), transparent);
-  margin: 0 auto;
-}
-
 /* ── 8. Chatbot — wave-bar typing indicator ── */
 @keyframes wave-bar {
   0%, 100% { height: 4px; opacity: 0.4; }
   50%       { height: 16px; opacity: 1; }
 }
 
-/* ── 8b. Chatbot — voice mode ambient breathing rings (idle state) ── */
-@keyframes voice-breathe {
-  0%, 100% { transform: scale(0.92); opacity: 0.16; }
-  50%      { transform: scale(1.1);  opacity: 0.34; }
-}
-.voice-breathe {
-  animation: voice-breathe 3.2s ease-in-out infinite;
-}
 
 /* ── 9. Chatbot — custom minimal scrollbar ── */
 .chat-messages::-webkit-scrollbar {
