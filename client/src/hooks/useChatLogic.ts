@@ -227,6 +227,12 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   const messagesEndRef        = useRef<HTMLDivElement>(null);
   const typingIntervalRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioRef              = useRef<HTMLAudioElement | null>(null);
+  // Web Audio API context + node used for voice-mode TTS playback (playAudioBuffer) —
+  // a fully-decoded AudioBufferSourceNode starts with zero latency, unlike a fresh
+  // HTMLAudioElement, which can silently clip the first second or so of audio while
+  // it fetches/decodes the blob before real output begins.
+  const playbackAudioCtxRef   = useRef<AudioContext | null>(null);
+  const activeSourceRef       = useRef<AudioBufferSourceNode | null>(null);
   const dictationRef          = useRef<SpeechRecog | null>(null);
   const recognitionRef        = useRef<SpeechRecog | null>(null);
   const recorderRef           = useRef<{ recorder: MediaRecorder; stream: MediaStream } | null>(null);
@@ -418,6 +424,8 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
       isMountedRef.current = false;
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      if (activeSourceRef.current) { try { activeSourceRef.current.stop(); } catch { /* already stopped */ } }
+      if (playbackAudioCtxRef.current) { playbackAudioCtxRef.current.close().catch(() => {}); }
       if (recognitionRef.current) recognitionRef.current.abort();
       if (recorderRef.current) {
         try {
@@ -580,31 +588,49 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   const playAudioBuffer = useCallback((buffer: ArrayBuffer): Promise<'completed' | 'interrupted'> => {
     stopAudio();
     return new Promise((resolve) => {
-      const url   = URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      let settled = false;
-      const cleanup = () => {
-        URL.revokeObjectURL(url);
-        if (audioRef.current === audio) audioRef.current = null;
-        if (interruptPlaybackRef.current === interrupt) interruptPlaybackRef.current = null;
-      };
-      const finish = (outcome: 'completed' | 'interrupted') => {
-        if (settled) return; // guards against onended firing after an interrupt already resolved us
-        settled = true;
-        cleanup();
-        resolve(outcome);
-      };
-      // Called by stopAudio() to end this sentence early — e.g. user hangs up, or the
-      // next sentence's playback is starting. Previously this relied on the audio
-      // element's own "pause" event, but browsers fire "pause" right before "ended" on
-      // completely NORMAL end-of-playback too, which was cutting sentences off right
-      // near their natural end. Resolving explicitly here removes that race entirely.
-      const interrupt = () => finish('interrupted');
-      interruptPlaybackRef.current = interrupt;
-      audio.onended = () => finish('completed');
-      audio.onerror = () => finish('completed');
-      audio.play().catch(() => finish('completed'));
+      (async () => {
+        try {
+          if (!playbackAudioCtxRef.current) {
+            const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+            playbackAudioCtxRef.current = new Ctx();
+          }
+          const ctx = playbackAudioCtxRef.current;
+          if (ctx.state === 'suspended') await ctx.resume();
+
+          // Fully decode before playing — an AudioBufferSourceNode starts instantly with
+          // zero latency. A plain `new Audio(blobUrl)` has to fetch+decode progressively
+          // before real output begins, which was silently clipping the first second or
+          // two of every sentence's speech.
+          const audioBuffer = await ctx.decodeAudioData(buffer.slice(0));
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(ctx.destination);
+          activeSourceRef.current = source;
+
+          let settled = false;
+          const finish = (outcome: 'completed' | 'interrupted') => {
+            if (settled) return; // guards against onended firing after an interrupt already resolved us
+            settled = true;
+            if (activeSourceRef.current === source) activeSourceRef.current = null;
+            if (interruptPlaybackRef.current === interrupt) interruptPlaybackRef.current = null;
+            resolve(outcome);
+          };
+          // Called by stopAudio() to end this sentence early — e.g. user hangs up, or the
+          // next sentence's playback is starting.
+          const interrupt = () => {
+            try { source.stop(); } catch { /* already stopped/ended */ }
+            finish('interrupted');
+          };
+          interruptPlaybackRef.current = interrupt;
+          source.onended = () => finish('completed');
+          source.start(0);
+        } catch (err) {
+          // Was silently swallowed before — a decode/playback failure looked identical
+          // to "nothing to say," which made voice mode go mute with zero clue why.
+          console.error('Voice playback failed:', err);
+          resolve('completed');
+        }
+      })();
     });
   }, [stopAudio]);
 
@@ -854,8 +880,20 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
 
   const toggleListening = useCallback(() => {
     if (!window.isSecureContext) { setLastBotResponse('Voice mode requires HTTPS or localhost.'); return; }
-    if (conversationActiveRef.current) stopConversation();
-    else runConversationLoop();
+    if (conversationActiveRef.current) { stopConversation(); return; }
+    // Create/resume the playback AudioContext synchronously within this click handler.
+    // Browsers only allow an AudioContext to start producing sound if it's resumed during
+    // a real user gesture — by the time playAudioBuffer would otherwise get around to it
+    // (after STT + LLM + TTS network round-trips), the gesture has long expired and the
+    // context stays silently suspended, which is exactly why voice replies went silent.
+    if (!playbackAudioCtxRef.current) {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      playbackAudioCtxRef.current = new Ctx();
+    }
+    if (playbackAudioCtxRef.current.state === 'suspended') {
+      playbackAudioCtxRef.current.resume().catch((err) => console.error('AudioContext resume failed:', err));
+    }
+    runConversationLoop();
   }, [runConversationLoop, stopConversation]);
 
   // ── Return ────────────────────────────────────────────────────────────────
