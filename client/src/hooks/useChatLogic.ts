@@ -169,7 +169,6 @@ export interface ChatLogic {
   // TTS
   speakingMessageId: string | null;
   // Voice (STT + conversation)
-  isListening: boolean;
   micLevel: number;
   isDictating: boolean;
   voiceStatus: VoiceStatus;
@@ -203,7 +202,6 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
   const [internalIsOpen,   setInternalIsOpen]   = useState(true);
   const [chatMode,         setChatMode]         = useState<'text' | 'voice'>('text');
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
-  const [isListening,      setIsListening]      = useState(false);
   // Live mic input level (0-1) while listening — drives a real-time reactive
   // ring around the mic button so voice mode visibly responds to your voice
   // as you speak, instead of a canned animation.
@@ -280,7 +278,6 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
       recorderRef.current = null;
     }
     stopAudio();
-    setIsListening(false);
     setMicLevel(0);
     setVoiceStatus('idle');
   }, [stopAudio]);
@@ -762,7 +759,6 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
 
           mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
           mediaRecorder.onstop = async () => {
-            setIsListening(false);
             // A manual hang-up (stopConversation) also stops the recorder — don't
             // transcribe or flip status in that case, there's no one left listening.
             if (!conversationActiveRef.current) { resolve(null); return; }
@@ -790,13 +786,11 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
             } catch { resolve(null); }
           };
 
-          setIsListening(true);
           setVoiceStatus('listening');
           mediaRecorder.start(100);
           requestAnimationFrame(checkAudio);
         })
         .catch((err) => {
-          setIsListening(false);
           setLastBotResponse(
             err.name === 'NotAllowedError'
               ? 'Microphone access denied. Please allow microphone permission and try again.'
@@ -903,7 +897,7 @@ export function useChatLogic({ externalIsOpen, onToggle }: Options = {}): ChatLo
     messages, input, setInput, loading, isRevealing,
     chatMode, setChatMode,
     speakingMessageId,
-    isListening, micLevel, isDictating, voiceStatus, lastBotResponse,
+    micLevel, isDictating, voiceStatus, lastBotResponse,
     displayContents, confettiId,
     showQuickQuestions,
     messagesEndRef,
