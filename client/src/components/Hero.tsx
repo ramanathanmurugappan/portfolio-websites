@@ -204,6 +204,7 @@ export default function Hero() {
             src="/images/avatar-hero.jpg"
             alt="Ramanathan"
             className="w-full h-full object-cover object-top"
+            fetchPriority="high"
           />
           {/* Bottom gradient fade into page */}
           <div
@@ -224,6 +225,7 @@ export default function Hero() {
             alt="Ramanathan"
             style={{ y: avatarY }}
             className="absolute inset-0 w-full h-[110%] object-cover object-top"
+            fetchPriority="high"
           />
           {/* Right-edge gradient fade */}
           <div
