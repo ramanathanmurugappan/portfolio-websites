@@ -50,6 +50,15 @@ export default function Home() {
   const [isChatOpen,    setIsChatOpen]    = useState(true);
 
   useEffect(() => {
+    // The app mounted cleanly — clear the chunk-reload guard (see
+    // ErrorBoundary) so a genuinely new deploy later in this tab's
+    // lifetime can still trigger one reload instead of being permanently
+    // blocked by an earlier reload in this session.
+    const timer = setTimeout(() => sessionStorage.removeItem('chunk-reload-attempted'), 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     const sections = ['home', 'works', 'tech-stack', 'contact'];
 
     const handleScroll = () => {

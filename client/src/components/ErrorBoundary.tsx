@@ -11,6 +11,18 @@ interface State {
   error: Error | null;
 }
 
+// Matches the errors browsers throw when a hashed chunk referenced by an
+// already-loaded index.html no longer exists on the server (a new deploy
+// wiped it) — Vite/React's "failed to fetch dynamically imported module" /
+// "error loading dynamically imported module". A hard reload fetches the
+// current index.html with correct chunk URLs and clears the error. Guarded
+// by sessionStorage so a persistently broken chunk doesn't reload-loop.
+function isChunkLoadError(error: Error): boolean {
+  return /fetch dynamically imported module|error loading dynamically imported module|importing a module script failed/i.test(
+    error.message
+  );
+}
+
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -19,6 +31,13 @@ class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error) {
+    if (isChunkLoadError(error) && !sessionStorage.getItem('chunk-reload-attempted')) {
+      sessionStorage.setItem('chunk-reload-attempted', '1');
+      window.location.reload();
+    }
   }
 
   render() {
