@@ -52,7 +52,7 @@ function ContactCard({ iconElement, label, value, href, delay }: ContactCardProp
 const CONTACT_CARDS: ContactCardProps[] = [
   {
     iconElement: <img src="/images/tech-logos/gmail.svg" alt="Gmail" className="w-[28px] h-[28px] object-contain dark:invert" />,
-    label: 'Email', value: 'ramanathanmurugappan29@gmail.com', href: 'mailto:ramanathanmurugappan29@gmail.com', delay: 0,
+    label: 'Email', value: 'hello@ram96.com', href: 'mailto:hello@ram96.com', delay: 0,
   },
   {
     iconElement: <Smartphone size={28} strokeWidth={1.5} className="text-black/70 dark:text-white/70" />,

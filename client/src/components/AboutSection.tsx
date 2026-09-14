@@ -32,7 +32,7 @@ const CARDS: CardData[] = [
   {
     type: 'image', src: '/images/avatar-thinking-card.jpg',
     question: 'How long have I been building AI?',
-    answer: '6+ years since Dec 2019 — Kaleidofin → Accenture → ITC Infotech.',
+    answer: '7+ years since Dec 2019 — Kaleidofin → Accenture → ITC Infotech.',
     color: '#6366f1',
     grad: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
   },

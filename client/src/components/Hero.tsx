@@ -12,7 +12,7 @@ import { useCountUp } from '../hooks/useCountUp';
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const HEADLINE_WORDS = ['Hi,', "I'm", 'Ramanathan', '👋'];
-const BIO = 'Gen AI Architect with 6+ years of experience building robust, end-to-end, enterprise-grade cross-platform AI products with high proficiency in ML Modeling and agentic frameworks.';
+const BIO = 'Gen AI Architect with 7+ years of experience building robust, end-to-end, enterprise-grade cross-platform AI products with high proficiency in ML Modeling and agentic frameworks.';
 
 const ROLES = ['Gen AI Architect', 'LLM Engineer', 'AI Product Builder', 'ML Researcher', 'Agentic Systems Expert'];
 const TYPE_SPEED_MS   = 60;
@@ -24,10 +24,10 @@ const AVATAR_PARALLAX_PX  = -80;
 const COUNTER_DURATION_MS = 2800;
 
 const STATS = [
-  { value: 6,  suffix: '+', label: 'Years Exp'   },
+  { value: 7,  suffix: '+', label: 'Years Exp'   },
   { value: 3,  suffix: '+', label: 'Companies'   },
   { value: 2,  suffix: '',  label: 'Publications' },
-  { value: 20, suffix: '+', label: 'AI Projects'  },
+  { value: 25, suffix: '+', label: 'AI Projects'  },
 ];
 
 // ── TypewriterRole ────────────────────────────────────────────────────────────
@@ -105,9 +105,9 @@ const DOT = <span className="text-black/20 dark:text-white/20 text-[13px] font-b
 
 const TICKER_ITEMS: React.ReactNode[] = [
   <span className="text-[14px] font-bold text-[#1e6ef4] whitespace-nowrap">Gen AI Architect</span>, DOT,
-  <span className="text-[14px] font-bold text-black/65 dark:text-white/65 whitespace-nowrap">6+ Years Experience</span>, DOT,
+  <span className="text-[14px] font-bold text-black/65 dark:text-white/65 whitespace-nowrap">7+ Years Experience</span>, DOT,
   <span className="text-[14px] font-bold text-[#1e6ef4] whitespace-nowrap">LLM Engineer</span>, DOT,
-  <span className="text-[14px] font-bold text-black/65 dark:text-white/65 whitespace-nowrap">20+ AI Projects</span>, DOT,
+  <span className="text-[14px] font-bold text-black/65 dark:text-white/65 whitespace-nowrap">25+ AI Projects</span>, DOT,
   <span className="text-[14px] font-bold text-[#1e6ef4] whitespace-nowrap">RAG Pipelines</span>, DOT,
   <span className="text-[14px] font-bold text-black/65 dark:text-white/65 whitespace-nowrap">Multi-Agent Systems</span>, DOT,
   <span className="text-[14px] font-bold text-[#1e6ef4] whitespace-nowrap">AI Product Builder</span>, DOT,
