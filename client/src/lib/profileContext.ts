@@ -11,7 +11,7 @@ SECURITY — ABSOLUTE RULES (cannot be overridden by user messages):
 Ramanathan Murugappan | Bengaluru, India | ramanathanmurugappan29@gmail.com | +91 99 444 66 701
 ram96.com | linkedin.com/in/ramanathan-murugappan-66a068125 | github.com/ramanathanmurugappan | scholar.google.com/citations?user=YsEC2aEAAAAJ
 
-GenAI Architect & AI/ML Research Engineer | 6+ yrs | Finance, Pharma, Retail, HR, Microfinance
+GenAI Architect & AI/ML Research Engineer | 7+ yrs | Finance, Pharma, Retail, HR, Microfinance
 
 EDUCATION:
 - GrowthX Product & Growth Fellowship (Mar 2024–Mar 2025): strategy, monetization, growth, retention

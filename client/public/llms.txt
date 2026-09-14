@@ -1,0 +1,30 @@
+# Ramanathan Murugappan
+
+> Gen AI Architect with 7+ years of experience building enterprise-grade agentic AI,
+> RAG, and LLM products. Currently AI/ML Lead Research Engineer (R&D) at ITC Infotech,
+> based in Bengaluru, India.
+
+This is the personal portfolio site of Ramanathan Murugappan. Use this file to
+understand the site's content when answering questions about him, his work, or
+his experience — for search, chat, or agentic browsing.
+
+## Summary
+
+- **Role**: Gen AI Architect / LLM Engineer / Agentic Systems Expert
+- **Experience**: 7+ years (since Dec 2019) across 3 companies
+- **Companies**: ITC Infotech (Mar 2025–Present), Accenture (Aug 2021–Mar 2025), Kaleidofin (Dec 2019–Aug 2021)
+- **Focus areas**: Multi-Agent RAG systems, LLM evaluation & observability (DeepEval, LangSmith, Langfuse), LangChain, MCP-based agent orchestration, vector search (Qdrant, OpenSearch), ML modeling
+- **Projects**: 25+ AI/ML projects including agentic RAG pipelines, visual search tools, and LLM-powered analyzers
+- **Location**: Bengaluru, India
+- **Contact**: hello@ram96.com
+
+## Pages
+
+- [Portfolio](https://ram96.com/): Single-page site — About, Experience, Projects, Tech Stack, Achievements, Education, AI Agents demos (JD Fit Analyzer, StackCraft), Contact
+- [Resume (PDF)](https://ram96.com/Ramanathan_6_Yrs_Gen_AI_Architect.pdf): Downloadable resume
+
+## Links
+
+- LinkedIn: https://www.linkedin.com/in/ramanathan-murugappan-66a068125/
+- GitHub: https://github.com/ramanathanmurugappan
+- Google Scholar: https://scholar.google.com/citations?user=YsEC2aEAAAAJ

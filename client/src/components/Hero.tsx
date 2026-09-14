@@ -25,7 +25,7 @@ const COUNTER_DURATION_MS = 2800;
 
 const STATS = [
   { value: 7,  suffix: '+', label: 'Years Exp'   },
-  { value: 3,  suffix: '+', label: 'Companies'   },
+  { value: 3,  suffix: '',  label: 'Companies'   },
   { value: 2,  suffix: '',  label: 'Publications' },
   { value: 25, suffix: '+', label: 'AI Projects'  },
 ];
