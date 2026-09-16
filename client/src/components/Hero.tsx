@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { useCountUp } from '../hooks/useCountUp';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -24,10 +24,15 @@ const AVATAR_PARALLAX_PX  = -80;
 const COUNTER_DURATION_MS = 2800;
 
 const STATS = [
-  { value: 7,  suffix: '+', label: 'Years Exp'   },
   { value: 3,  suffix: '',  label: 'Companies'   },
   { value: 2,  suffix: '',  label: 'Publications' },
   { value: 25, suffix: '+', label: 'AI Projects'  },
+];
+
+const EXP_ITEMS = [
+  { value: 7, label: 'AI/ML Experience' },
+  { value: 2, label: "M.E. (Master's)"  },
+  { value: 2, label: 'Research'         },
 ];
 
 // ── TypewriterRole ────────────────────────────────────────────────────────────
@@ -80,6 +85,90 @@ function CounterStat({ value, suffix, label }: { value: number; suffix: string; 
       </span>
       <span className="text-[10px] text-black/40 dark:text-white/40 font-semibold uppercase tracking-[0.07em]">
         {label}
+      </span>
+    </div>
+  );
+}
+
+// ── ExpStat ───────────────────────────────────────────────────────────────────
+// "7, 2, 2" — 7 yrs AI/ML industry, 2 yrs M.E., 2 yrs research. Each number has its own hover/tap breakdown.
+
+function useTouchCapable() {
+  const [touchCapable, setTouchCapable] = useState(false);
+  useEffect(() => {
+    setTouchCapable(window.matchMedia('(hover: none)').matches);
+  }, []);
+  return touchCapable;
+}
+
+function ExpNumber({ value, label }: { value: number; label: string }) {
+  const { count, ref } = useCountUp(value, COUNTER_DURATION_MS);
+  const touchCapable = useTouchCapable();
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!touchCapable || !open) return;
+    const handler = (e: PointerEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [touchCapable, open]);
+
+  return (
+    <div
+      ref={(el) => { wrapRef.current = el; ref.current = el; }}
+      className="relative inline-flex items-baseline cursor-help"
+      onMouseEnter={() => !touchCapable && setOpen(true)}
+      onMouseLeave={() => !touchCapable && setOpen(false)}
+      onClick={(e) => { if (touchCapable) { e.stopPropagation(); setOpen((o) => !o); } }}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+      role="button"
+      tabIndex={0}
+      aria-expanded={open}
+      aria-label={`${value} years — ${label}`}
+    >
+      <span className="text-[26px] md:text-[30px] font-bold tracking-[-0.03em] text-black dark:text-white tabular-nums leading-none underline decoration-dotted decoration-black/20 dark:decoration-white/20 underline-offset-[4px]">
+        {count}
+      </span>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[10px] w-max max-w-[170px] rounded-[10px] bg-white dark:bg-[#1a1a1a] border border-black/[0.08] dark:border-white/[0.08] shadow-[0_10px_28px_rgba(0,0,0,0.14)] dark:shadow-[0_10px_28px_rgba(0,0,0,0.55)] px-[10px] py-[7px] z-30 pointer-events-none"
+          >
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-[8px] h-[8px] rotate-45 bg-white dark:bg-[#1a1a1a] border-r border-b border-black/[0.08] dark:border-white/[0.08] -mt-[4px]" />
+            <span className="text-[11px] font-semibold text-black dark:text-white whitespace-nowrap">
+              {label}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function ExpStat() {
+  return (
+    <div className="flex flex-col gap-[3px]">
+      <div className="flex items-baseline gap-[2px] leading-none">
+        {EXP_ITEMS.map((item, i) => (
+          <span key={item.label} className="flex items-baseline">
+            {i > 0 && (
+              <span className="text-[26px] md:text-[30px] font-bold text-black dark:text-white mx-[2px]">+</span>
+            )}
+            <ExpNumber value={item.value} label={item.label} />
+          </span>
+        ))}
+      </div>
+      <span className="text-[10px] text-black/40 dark:text-white/40 font-semibold uppercase tracking-[0.07em]">
+        Years Exp
       </span>
     </div>
   );
@@ -304,6 +393,7 @@ export default function Hero() {
               transition={{ duration: 0.5, delay: 0.62, ease: 'easeOut' }}
               className="flex gap-[28px] md:gap-[36px] py-[4px] border-y border-black/[0.06] dark:border-white/[0.06]"
             >
+              <ExpStat />
               {STATS.map((stat) => (
                 <CounterStat key={stat.label} value={stat.value} suffix={stat.suffix} label={stat.label} />
               ))}
